@@ -1,0 +1,2061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dice Quest</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+:root{--bg:#e4eded;--panel:#f8fcfb;--ink:#12262e;--mute:#58727a;--line:#b7cdcc;--gold:#a8700a;--hp:#c2413b;--btn:#12262e;--btnink:#f8fcfb;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101c22;--panel:#1a2d36;--ink:#e6f0ee;--mute:#8aa6ab;--line:#2c4650;--gold:#f0b850;--hp:#e0645c;--btn:#e6f0ee;--btnink:#101c22}}
+:root[data-theme="dark"]{--bg:#101c22;--panel:#1a2d36;--ink:#e6f0ee;--mute:#8aa6ab;--line:#2c4650;--gold:#f0b850;--hp:#e0645c;--btn:#e6f0ee;--btnink:#101c22}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 "Atkinson Hyperlegible",system-ui,sans-serif;min-height:100%}
+.wrap{max-width:480px;margin:0 auto;padding:14px 14px 28px}
+h1{font:700 28px "Pixelify Sans",ui-monospace,monospace;margin:4px 0 2px}
+.region{color:var(--mute);margin:0 0 10px;font-size:15px}
+.hud{display:flex;gap:8px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.hp{flex:1}
+.bar{height:12px;background:var(--line);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--hp);transition:width .4s}
+.nums{font:500 15px "Pixelify Sans",ui-monospace,monospace;display:flex;justify-content:space-between;margin-bottom:3px}
+.gold{color:var(--gold);font:700 16px "Pixelify Sans",ui-monospace,monospace;white-space:nowrap}
+.stats{color:var(--mute);font-size:14px;margin:6px 2px 0}
+.map{display:grid;grid-template-columns:repeat(10,1fr);width:100%;margin:12px 0;border:3px solid var(--line);border-radius:8px;overflow:hidden}
+.c{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:var(--fs,22px);line-height:1}
+.c.a{background:var(--m1)}.c.b{background:var(--m2)}.c.w{background:var(--mt)}.c.k{background:var(--mk)}.c.p{background:var(--mp)}
+.c.me{outline:2px solid #fff;outline-offset:-2px;box-shadow:inset 0 0 0 4px #12262e66}
+button{font:700 15px "Atkinson Hyperlegible",sans-serif;background:var(--btn);color:var(--btnink);border:0;border-radius:8px;padding:10px 14px;cursor:pointer}
+button:disabled{opacity:.4;cursor:default}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.pad{display:grid;grid-template-columns:repeat(3,56px);gap:6px;justify-content:center;margin:0 0 12px}
+.pad button{padding:12px 0;font-size:18px}
+.pad .u{grid-column:2}.pad .l{grid-column:1;grid-row:2}.pad .dn{grid-column:2;grid-row:2}.pad .r{grid-column:3;grid-row:2}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px}
+.box h2{font:700 19px "Pixelify Sans",ui-monospace,monospace;margin:0 0 6px}
+.hidden{display:none}
+.tray{display:flex;gap:10px;margin:4px 0 12px}
+.die{flex:1;text-align:center;border:2px solid var(--line);border-radius:10px;padding:6px 4px}
+.die b{display:block;font:700 30px "Pixelify Sans",ui-monospace,monospace;min-height:38px}
+.die small,.it small{color:var(--mute);font-size:13px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.tabs button{background:var(--line);color:var(--ink);padding:7px 10px;font-size:14px}
+.tabs button.on{background:var(--btn);color:var(--btnink)}
+.it{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.it button{padding:8px 12px;white-space:nowrap}
+#log{max-height:200px;overflow:auto;font-size:14px;color:var(--mute)}
+#log div{padding:2px 0;border-bottom:1px solid var(--line)}
+#log div:first-child{color:var(--ink)}
+.hint{color:var(--mute);font-size:13px;margin:0 0 12px;text-align:center}
+.tag{display:inline-block;font:700 11px "Atkinson Hyperlegible",sans-serif;background:var(--line);color:var(--ink);border-radius:6px;padding:1px 7px;margin-left:6px;vertical-align:middle}
+.c.tr{box-shadow:inset 0 0 0 60px rgba(230,40,40,.55)}
+.c.tp{box-shadow:inset 0 0 0 60px rgba(150,70,230,.6)}
+.c.tb{box-shadow:inset 0 0 0 60px rgba(0,0,0,.85)}
+.card{display:block;width:100%;text-align:left;margin-bottom:8px}.card small{font-weight:400;opacity:.85}
+.col{display:flex;flex-direction:column;gap:8px}.col button{width:100%}
+.dlg.wide{width:100%;max-width:440px;max-height:92vh;overflow:auto}
+#menu{background:var(--bg);z-index:60}#death{z-index:70}
+select{padding:7px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit;width:100%}
+#log{max-height:130px}
+.tut{font-size:14px;color:var(--mute)}.tut p{margin:6px 0}.tut b{color:var(--ink)}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.ov.hidden{display:none}
+.dlg{background:var(--panel);border:2px solid var(--hp);border-radius:12px;padding:16px;max-width:380px}
+.dv{display:block;font-size:13px;margin:4px 0}.dv input,#devCmd,#devPw{padding:7px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}.dv input{width:100%}
+#devOut{white-space:pre-wrap;font-size:13px;color:var(--mute);margin:6px 0 0}
+details.box summary{cursor:pointer;font:700 19px "Pixelify Sans",ui-monospace,monospace}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Dice Quest</h1>
+  <details class="box" id="tut" open><summary>How to play</summary><div class="tut">
+    <p><b>Move</b> with the arrow keys / WASD or the pad (the pad hides during turn-based fights). Regions read <b>stage-region</b>, so 2-8-b is stage 2, region 8, side path b. There are 10 stages; the last holds Lucifugus, the Final Boss.</p>
+    <p><b>Classes &amp; weapons:</b> pick a class at the start; change it any time in the 🎓 Class Hall (half your credits). Each weapon type (Sword, Gauntlets, Dagger, Bow, Staff) only powers its own skills; “Any weapon” skills always work.</p>
+    <p><b>Fights:</b> attacker and defender each roll a d20. If the attacker wins, roll a d6 for damage: 1 = 0% (25% with a Fighter’s Band), 2 = 25%, 3 = 50%, 4 = 75%, 5 = 100%, 6 = 125%. Skills of 100%+ damage also duel on the d20 with the bonus shown.</p>
+    <p><b>SP:</b> skills cost SP. You regain SP every turn and every 5 steps (faster at 20, 40, 60+ max SP), 50% after a win, and fully in Safeplaces and shops.</p>
+    <p><b>Boss arenas</b> (every 10th region) start the moment you enter and seal the gates. Attack from within your weapon’s range (diagonals count as 2 tiles); ranged skills show their reach (↗). The boss acts every 3 of your steps (2 below half HP) and its counterattack uses up its turn. <b>Red tiles</b> are hit on its next move(s); <b>black tiles</b> mean instant death (8th boss and beyond).</p>
+    <p><b>Achievements</b> unlock skins, which you can wear at the 🧵 Tailor in any Safeplace. Stage 3+ bosses also leave lingering ground: red = hit next move, then purple = it keeps hurting. Secrets await those who beat the final boss with every class...</p>
+    <p><b>Safeplaces</b> (1st region of each stage) have a 🏪 shop, 🏫 skill hall, 🏛️ guild and 🎓 class hall. 🌀 / 🔒 gates lead to side paths (b to e) ending in a block puzzle, a riddle chamber, a mini boss arena, or an exclusive shop.</p>
+  </div></details>
+  <div class="box"><h2>Battle log</h2><div id="log"></div></div>
+  <p class="region" id="region"></p>
+  <div class="hud">
+    <div class="hp"><div class="nums"><span>HP</span><span id="hpn"></span></div><div class="bar"><i id="hpb"></i></div></div>
+    <div class="gold" id="gold"></div>
+      </div>
+  <p class="stats" id="stats"></p>
+  <div class="row" id="cons" style="margin-top:8px"></div>
+  <div class="map" id="map" aria-label="Game map"></div>
+  <div class="pad" id="pad">
+    <button class="u" data-d="0,-1" aria-label="Up">▲</button>
+    <button class="l" data-d="-1,0" aria-label="Left">◀</button>
+    <button class="dn" data-d="0,1" aria-label="Down">▼</button>
+    <button class="r" data-d="1,0" aria-label="Right">▶</button>
+  </div>
+  <div class="box hidden" id="fight">
+    <h2 id="ename"></h2>
+    <div class="nums"><span>Enemy HP</span><span id="ehpn"></span></div>
+    <div class="bar" style="margin-bottom:10px"><i id="ehpb"></i></div>
+    <div class="tray">
+      <div class="die"><b id="d1">–</b><small>Attacker d20</small></div>
+      <div class="die"><b id="d2">–</b><small>Defender d20</small></div>
+      <div class="die"><b id="d3">–</b><small>Damage d6</small></div>
+    </div>
+    <div class="row"><button id="atk" type="button">Attack</button><button id="def" type="button">Defend (-50%, +1 SP)</button><button id="run" type="button">Run (d20 ≥ 11)</button></div>
+    <div class="row" id="skills" style="margin-top:8px"></div>
+    <small id="alegend" class="hidden" style="display:block;margin-top:8px;color:var(--mute)">Red tiles take damage at the boss’s next move(s). Black tiles are instant death. Boss moves every 3 steps (2 below half HP).</small>
+  </div>
+  <div class="box hidden" id="shop"><h2 id="shopTitle">Shop</h2><div id="shopBody"></div></div>
+  <div class="ov" id="menu"><div class="dlg wide">
+    <h1 style="text-align:center;margin:0 0 10px">🎲 Dice Quest</h1>
+    <div id="menuMain"><div class="col"><button id="menuResume" type="button" class="hidden">Resume game</button><button id="menuNew" type="button">New Game</button><button id="menuLoad" type="button">Load from save file</button><button id="menuSettings" type="button">Settings</button></div></div>
+    <div id="menuSet" class="hidden"><h2>Settings</h2>
+      <label class="dv">Theme <select id="setTheme"><option value="auto">Match my device</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+      <label class="dv">Animation speed <select id="setSpeed"><option value="0.5">Fast</option><option value="1">Normal</option><option value="1.6">Slow</option></select></label>
+      <label class="dv"><input type="checkbox" id="setTut" style="width:auto"> Show the “How to play” guide</label>
+      <label class="dv">Music volume <input type="range" id="setMus" min="0" max="1" step="0.05"></label>
+      <label class="dv">Sound effects volume <input type="range" id="setSfx" min="0" max="1" step="0.05"></label>
+      <label class="dv"><input type="checkbox" id="setMute" style="width:auto"> Mute all audio</label>
+      <button id="setAudio" type="button" style="margin-top:6px">🎵 Audio files…</button>
+      <button id="setBack" type="button" style="margin:8px 0 0 6px">Back</button></div>
+    <div id="menuAudio" class="hidden"><h2>Audio files</h2>
+      <small><b>Folder loading:</b> put files named after each slot (for example <code>boss.mp3</code>, <code>road3.wav</code>, <code>hit.ogg</code>) in the audio folder next to this page; they are found automatically when the game starts or when you press Rescan. This only works when the page is opened from your own computer or server alongside that folder. <b>Or</b> pick a file per slot with Choose: those stay in this browser and override the folder. Empty slots stay silent. ▶ previews a slot.</small>
+      <label class="dv">Audio folder (relative to this page) <input type="text" id="audioDir" placeholder="audio/"></label>
+      <button id="audioScan" type="button" style="margin:4px 0 8px">Rescan folder</button>
+      <div id="audioList"></div>
+      <input type="file" id="audioFile" accept="audio/*,.mp3,.wav,.ogg" hidden>
+      <button id="audioBack" type="button" style="margin-top:8px">Back</button></div>
+    <div id="menuDiff" class="hidden"><h2>Choose difficulty</h2><div id="diffList" class="col"></div><button id="diffBack" type="button" style="margin-top:8px">Back</button></div>
+    <div id="menuClass" class="hidden"><h2>Choose your class</h2><div id="classList" class="col"></div><button id="classBack" type="button" style="margin-top:8px">Back</button></div>
+  </div></div>
+  <div class="ov hidden" id="death"><div class="dlg wide"><h2 id="deathT">💀 You have fallen</h2><p id="deathP"></p><div id="deathList" class="col"></div></div></div>
+  <div class="ov hidden" id="ending"><div class="dlg wide"><h2>🏆 The End</h2><p>Ragnarok is defeated and the lands are finally free of fear. Thank you for playing Dice Quest!</p><button id="endBtn" type="button">Keep exploring</button></div></div>
+  <div class="ov hidden" id="warn"><div class="dlg"><h2 id="warnT"></h2><p id="warnP"></p><div class="row"><button id="warnYes" type="button">Enter</button><button id="warnNo" type="button">Go back</button></div></div></div>
+  <div class="box hidden" id="skillhall"><h2>Skill Hall</h2><div id="skillBody"></div></div>
+  <div class="box hidden" id="tailor"><h2>Tailor</h2><div id="tailorBody"></div></div>
+  <div class="box hidden" id="hall"><h2>Class Hall</h2><div id="hallBody"></div></div>
+  <div class="box hidden" id="guild"><h2>Guild</h2><div id="guildBody"></div></div>
+  <div class="box"><div class="nums"><span id="lvl"></span><span id="expn"></span></div><div class="bar" style="margin-bottom:8px"><i id="expb" style="background:var(--gold)"></i></div><div class="row"><button id="upA" type="button">+1 ATK</button><button id="upD" type="button">+2 DEF</button><button id="upS" type="button">+1 SP</button></div></div>
+  
+  <details class="box"><summary>Quests</summary><div id="questBody"></div></details>
+  <details class="box"><summary>Equipment &amp; skills</summary><div id="gearBody"></div></details>
+  <div class="box"><div class="row"><button id="save" type="button">💾 Save to file</button><button id="load" type="button">📂 Load file</button><button id="toMenu" type="button">☰ Menu</button><input type="file" id="file" accept=".json,application/json" hidden></div><textarea id="saveCode" class="hidden" readonly rows="4" style="width:100%;margin-top:8px"></textarea></div>
+  <details class="box" id="dev"><summary>Dev Tools</summary>
+    <div id="devLock"><input type="password" id="devPw" placeholder="Password" style="width:60%"> <button id="devGo" type="button">Unlock</button> <small id="devMsg"></small></div>
+    <div id="devPanel" class="hidden"><div id="devFields"></div><button id="devApply" type="button" style="margin:6px 0">Apply values</button>
+      <div class="row"><input id="devCmd" placeholder="Console command (type help)" style="flex:1"><button id="devRun" type="button">Run</button></div><pre id="devOut"></pre></div>
+  </details>
+  
+</div>
+<script>
+const N = 100, SECRET = 100, LV_CAP = 150, SP_CAP = 100;
+// ---------- settings (saved in the browser when possible) ----------
+const SET = { theme: "auto", speed: 1, tut: true, mus: 0.6, sfx: 0.8, mute: false, dir: "audio/" };
+try { Object.assign(SET, JSON.parse(localStorage.getItem("dq-settings") || "{}")); } catch (e) {}
+function applySettings() {
+  try {
+    const r = document.documentElement;
+    if (SET.theme === "auto") r.removeAttribute("data-theme"); else r.setAttribute("data-theme", SET.theme);
+    $("tut").classList.toggle("hidden", !SET.tut);
+    localStorage.setItem("dq-settings", JSON.stringify(SET));
+  } catch (e) {}
+  try { applyVolume(); } catch (e) {}
+}
+const THEMES = [
+  ["Safeplace", "Green Meadow", "Whispering Woods", "Mossy Hollow", "Bramble Trail", "Fern Glade", "Old Mill Road", "Foggy Marsh", "Hydra’s Approach", "Hydra’s Lair"],
+  ["Safeplace: Emberhold", "Dusty Trail", "Ember Hills", "Dry Canyon", "Bone Desert", "Scorched Dunes", "Rattling Gulch", "Sand Keep", "Dragon’s Road", "Dragon Peak"],
+  ["Safeplace: Frosthaven", "Frozen Pass", "Snowy Spruce", "Crystal Caverns", "Ice Falls", "Bleak Tundra", "Glacier Bridge", "Frost Gate", "Giant’s Steps", "Frost Citadel"],
+  ["Safeplace: Duskwatch", "Sunken Ruins", "Haunted Marsh", "Wraith Hollow", "Ghost Quarter", "Clockwork Ruins", "Gloom Garden", "Bone Orchard", "Ruin Approach", "Lich’s Crypt"],
+  ["Safeplace: Cinderport", "Ash Fields", "Lava Steps", "Molten Core", "Brimstone Pass", "Ember Spire", "Obsidian Waste", "Colossus Path", "Magma Rim", "Magma Throne"],
+  ["Safeplace: Tidehaven", "Kelp Forest", "Coral Labyrinth", "Sunken Galleon", "Pearl Reef", "Brine Caverns", "Whale Graveyard", "Trench Edge", "Kraken’s Approach", "Kraken’s Maw"],
+  ["Safeplace: Skyrest", "Sky Bridge", "Cloud Garden", "Thunder Peaks", "Gale Terrace", "Lightning Fields", "Windcutter Pass", "Stormwatch", "Roc’s Approach", "Thunder Spire"],
+  ["Safeplace: Prismhold", "Glimmer Cave", "Quartz Gardens", "Amethyst Hollow", "Mirror Lake", "Shard Valley", "Refraction Road", "Geode Halls", "Sphinx Approach", "Crystal Sanctum"],
+  ["Safeplace: Starwatch", "Shattered Moon", "Eclipse Plains", "Dark Orchard", "Starless Road", "Void Garden", "Null Fields", "Event Horizon", "Void Threshold", "Void Throne"],
+  ["Safeplace: Lastlight", "Ashen Gate", "Moat of Embers", "Gargoyle Court", "Bone Bridge", "Cursed Armory", "Hall of Mirrors", "Dungeon Depths", "Throne Corridor", "Castle of Lucifugus"]];
+const NAMES = THEMES.flat().concat(["Sealed Chamber"]);
+// one colour scheme per stage (tile A, tile B, tree, path, rock); tones darken as the stage progresses
+const STAGE_PAL = [["#8fd18a","#84c880","#4f9a5c","#dccb9c","#9aa5a6"],["#e0c07a","#d8b66e","#b8873a","#f0dcae","#a8845a"],["#cfe8f4","#c2e0ef","#7fb0cc","#a9bccb","#8a9aa6"],["#a79ad6","#9d90cc","#6d5ea6","#cdbfe8","#6b6485"],["#d9694a","#cf5f42","#9a3a28","#f0a070","#7a625c"],
+  ["#4fb3bf","#46a8b4","#1f7d8c","#cfe3b0","#4a6a70"],["#b8bfd8","#adb5d0","#7882a8","#e8e0a8","#707890"],["#d79ae0","#cd90d6","#9a5fb0","#f0d0f4","#8a6a98"],["#6a64b8","#605aae","#3b3580","#9a94dc","#4a4478"],["#9a3a48","#8f3342","#5a1c28","#c08088","#3a2a30"]];
+const DECO = ["🌳", "🌵", "🌲", "🪦", "🌋", "🪸", "🌩️", "💎", "🔮", "🔥"];
+const dark = (hex, f) => "#" + [1, 3, 5].map(k => Math.round(parseInt(hex.slice(k, k + 2), 16) * f).toString(16).padStart(2, "0")).join("");
+const palOf = i => (i >= 100 ? STAGE_PAL[9].map(c => dark(c, 0.4)) : STAGE_PAL[Math.floor(i / 10)].map(c => dark(c, 1 - 0.5 * ((i % 10) / 9))));
+const TYPES = [
+  { n: "Slime",    e: "🟢", hp: 30,  atk: 8,  c: 5 },
+  { n: "Goblin",   e: "👺", hp: 45,  atk: 12, c: 10 },
+  { n: "Orc",      e: "👹", hp: 70,  atk: 18, c: 20 },
+  { n: "Skeleton", e: "💀", hp: 85,  atk: 22, c: 28 },
+  { n: "Wraith",   e: "👻", hp: 100, atk: 27, c: 38 },
+  { n: "Troll",    e: "🧌", hp: 130, atk: 32, c: 50 },
+  { n: "Golem",    e: "🤖", hp: 160, atk: 38, c: 65 },
+  { n: "Dragonkin", e: "🦎", hp: 190, atk: 45, c: 85 },
+  { n: "Revenant", e: "🧟", hp: 220, atk: 52, c: 105 },
+  { n: "Demon",    e: "👿", hp: 260, atk: 60, c: 130 }
+];
+// ---------- boss definitions: name, emoji, obstacle style, hazard tiles, area attacks (* = enraged phase only) ----------
+// death attacks (black tiles) only exist for the 8th boss and above
+function mkAoe(tok, s) {
+  const phase = tok.endsWith("*") ? 2 : 0, kind = tok.replace("*", ""), p = 0.4 + 0.06 * s;
+  const A = {
+    target: { n: "Targeted Blast", kind: "target", r: s > 5 ? 2 : 1, pct: p, delay: 1, cd: 2 },
+    circle: { n: "Shockwave", kind: "circle", r: s > 3 ? 3 : 2, pct: p * 0.9, delay: 1, cd: 3 },
+    ring: { n: "Ring of Ruin", kind: "ring", r: s > 6 ? 4 : 3, pct: p, delay: 1, cd: 3 },
+    line: { n: "Sweeping Line", kind: "line", pct: p * 0.8, delay: 1, cd: 2 },
+    cross: { n: "Cross Strike", kind: "cross", pct: p * 0.9, delay: 2, cd: 4 },
+    cone: { n: "Breath Cone", kind: "cone", len: 4 + (s > 4 ? 1 : 0), pct: p, delay: 1, cd: 3 },
+    scatter: { n: "Meteor Rain", kind: "scatter", cnt: 8 + 2 * s, pct: p, delay: 2, cd: 4 },
+    mega: { n: "Cataclysm", kind: "circle", r: s > 6 ? 5 : 4, pct: p * 1.6, delay: 3, cd: 8 },
+    death: { n: "Death Mark", kind: "target", r: 2, pct: 1, death: true, delay: 3, cd: 9 },
+    deathring: { n: "Oblivion Ring", kind: "ring", r: 4, pct: 1, death: true, delay: 3, cd: 11 }
+  }[kind];
+  const o = { ...A };
+  if (s >= 3 && ["circle", "ring", "scatter", "cross", "mega"].includes(kind)) { o.linger = 2 + (s >= 7 ? 1 : 0); o.lpct = A.pct * 0.4; o.debuff = s >= 5 && (kind === "scatter" || kind === "ring"); }
+  if (phase) o.phase = phase;
+  return o;
+}
+const BOSS_DEF = [
+  ["Swamp Hydra", "🐉", "scatter", 0, "target circle scatter*"],
+  ["Ancient Dragon", "🐲", "pillars", 0, "cone line scatter* mega*"],
+  ["Frost Giant", "🦣", "scatter", 4, "ring circle line cross*"],
+  ["Lich King", "🧙‍♂️", "pillars", 6, "target ring cross* scatter*"],
+  ["Magma Colossus", "🦖", "scatter", 8, "circle line scatter* mega*"],
+  ["Kraken", "🦑", "pillars", 8, "line cone ring mega*"],
+  ["Thunder Roc", "🦅", "scatter", 10, "target scatter cross cone*"],
+  ["Crystal Sphinx", "🦁", "pillars", 10, "cone ring scatter death*"],
+  ["Void Emperor", "👁️", "scatter", 12, "target cone scatter deathring* mega*"],
+  ["Lucifugus", "😈", "pillars", 12, "target ring cone scatter death mega* deathring*"]
+];
+const BOSSES = {};
+BOSS_DEF.forEach(([n, e, obs, haz, k], s) => { BOSSES[s * 10 + 9] = { n, e, obs, haz, stage: s + 1, title: n === "Lucifugus" ? "Lucifugus: The Final Boss" : n, aoes: k.split(" ").map(t => mkAoe(t, s + 1)) }; });
+// side-path chains (b..e): the last region is a block puzzle, riddle chamber, mini boss arena or exclusive shop
+const BRANCH = {};
+const KINDS = [["block", 0], ["mini", 1], ["shop", 0], ["riddle", 1], ["mini", 0], ["shop", 1]];
+for (let t = 0; t < 10; t++) [2, 5, 7].forEach((o, n) => { const [k, lock] = KINDS[(t * 3 + n) % 6]; BRANCH[t * 10 + o] = { k, lock, depth: 1 + ((t * 2 + n * 3 + 1) % 4) }; });
+BRANCH[40] = { k: "hall", lock: 0, depth: 1 };   // 5-1b: the Hall of Shrines off stage 5’s Safeplace
+const BNAMES = { hall: "Hall of Shrines", shrine: "Shrine", path: "Winding Path", mini: "Beast Den", shop: "Hidden Bazaar", block: "Block Chamber", riddle: "Riddle Chamber" };
+const RIDDLES = [
+  ["a ripe tomato", "a ruby’s glow", "a fire engine"],
+  ["a clear summer sky", "the deep ocean", "a sapphire"],
+  ["fresh spring grass", "an emerald", "a frog’s back"],
+  ["a sunflower’s petals", "a ripe banana", "the midday sun"]];
+const MINIS = [["Cave Bear", "🐻"], ["Giant Spider", "🕷️"], ["Dire Wolf", "🐺"], ["Bone Knight", "☠️"], ["Stone Gargoyle", "🦇"], ["Fire Drake", "🦂"]];
+const PILLARS = ["🔴", "🔵", "🟢", "🟡"], PNAMES = ["Red", "Blue", "Green", "Yellow"];
+
+// ---------- difficulty ----------
+const DIFFS = { easy: { n: "Easy", m: 0.9, d: "-10% to all enemy stats." }, normal: { n: "Normal", m: 1, d: "The usual experience." }, hard: { n: "Hard", m: 1.1, d: "+10% to all enemy stats." }, hell: { n: "Hell", m: 1.25, aoe: 0.25, d: "+25% to all enemy stats, and bosses use area attacks much more often." } };
+// ---------- the secret Elder Dragons ----------
+const SHRINES = [
+  { id: "water", n: "Shrine of Transformation", e: "🌊", em: "🐳", boss: "Aquaticus", title: "Aquaticus, Divine Water Dragon", key: "fin", keyN: "Dragon Fin", hp: 1.25, aoes: "target ring circle mega*", rule: "No healing or lifesteal skills (potions are allowed)." },
+  { id: "wind", n: "Shrine of Time", e: "🌪️", em: "🕊️", boss: "Ventuswill", title: "Ventuswill, Divine Wind Dragon", key: "feather", keyN: "Storm Feather", hp: 1.3, aoes: "line cone scatter cross* mega*", rule: "Tornadoes hunt you every 3 steps; two more appear when it enrages." },
+  { id: "fire", n: "Shrine of Destruction", e: "🔥", em: "🐉", boss: "Fiersome", title: "Fiersome, Divine Fire Dragon", key: "fscale", keyN: "Firewyrm Scale", hp: 1.35, aoes: "circle cone scatter* mega*", rule: "The arena burns you for 10% max HP every turn." },
+  { id: "earth", n: "Shrine of Life", e: "🌿", em: "🦕", boss: "Terrable", title: "Terrable, Divine Earth Dragon", key: "escale", keyN: "Earthwyrm Scale", hp: 1.4, aoes: "target cross ring* mega*", rule: "Every 3 turns the ground shatters and rocks rise on the marked tiles." }
+];
+// ---------- achievements and skins ----------
+const ACH = [
+  { id: "boss1", n: "Hydra Slayer", d: "Defeat the Swamp Hydra", t: () => P.st.bosses[1] },
+  { id: "lv25", n: "Seasoned Hero", d: "Reach level 25", t: () => P.lv >= 25 },
+  { id: "quest3", n: "Guild Regular", d: "Complete 3 guild quests", t: () => P.st.quests >= 3 },
+  { id: "kill100", n: "Monster Hunter", d: "Defeat 100 monsters", t: () => P.st.kills >= 100 },
+  { id: "chest5", n: "Treasure Hunter", d: "Open 5 chests", t: () => P.st.chests >= 5 },
+  { id: "mini1", n: "Beast Tamer", d: "Defeat a mini boss", t: () => P.st.minis >= 1 },
+  { id: "stage5", n: "Far Traveler", d: "Reach Stage 5", t: () => P.reg >= 40 },
+  { id: "luci", n: "Final Boss Down", d: "Defeat Lucifugus", t: () => P.st.bosses[10] },
+  { id: "amulet", n: "Dragonborn", d: "Forge the Divine Dragon Amulet", t: () => P.amulet },
+  { id: "rag", n: "Tyrant’s End", d: "Defeat Ragnarok", t: () => P.st.rag }
+];
+const SKINS = [
+  { id: "wand", n: "Wanderer", e: "🧙" },
+  { id: "ninja", n: "Shadow Walker", e: "🥷", ach: "boss1" },
+  { id: "prince", n: "Champion", e: "🤴", ach: "lv25" },
+  { id: "elf", n: "Elven Scout", e: "🧝", ach: "quest3" },
+  { id: "vamp", n: "Night Hunter", e: "🧛", ach: "kill100" },
+  { id: "genie", n: "Treasure Genie", e: "🧞", ach: "chest5" },
+  { id: "fairy", n: "Beast Tamer", e: "🧚", ach: "mini1" },
+  { id: "astro", n: "Far Traveler", e: "🧑‍🚀", ach: "stage5" },
+  { id: "hero", n: "Hero", e: "🦸", ach: "luci" },
+  { id: "dragon", n: "Dragonborn", e: "🐲", ach: "amulet" },
+  { id: "tyrant", n: "Tyrant Slayer", e: "👑", ach: "rag" }
+];
+// ---------- weapon types: skills only work with their own weapon type ----------
+const WT = { sword: { n: "Sword", p: "sw", range: 1, noun: "Blade" }, gauntlet: { n: "Gauntlets", p: "gt", range: 1, noun: "Gauntlets" }, dagger: { n: "Dagger", p: "dg", range: 1, noun: "Dagger" }, bow: { n: "Bow", p: "bw", range: 3, noun: "Bow" }, staff: { n: "Staff", p: "st", range: 2, noun: "Staff" } };
+const WNAMES = {
+  sword: ["Simple Sword", "Advanced Sword", "Knight Sword", "Runic Blade", "Dragon Slayer", "Mythril Blade", "Starsteel Edge", "Void Cleaver", "Celestial Saber", "Abyssal Edge", "Demonbane"],
+  gauntlet: ["Simple Gauntlets", "Advanced Gauntlets", "Knight Fists", "Runic Knuckles", "Dragon Claws", "Mythril Gauntlets", "Starsteel Fists", "Void Crushers", "Celestial Grips", "Abyssal Maulers", "Demon Breakers"],
+  dagger: ["Simple Dagger", "Advanced Dagger", "Knight Dirk", "Runic Kris", "Dragon Fang", "Mythril Stiletto", "Starsteel Kunai", "Void Reaper", "Celestial Razor", "Abyssal Shiv", "Demon Thorn"],
+  bow: ["Simple Bow", "Advanced Bow", "Knight Longbow", "Runic Bow", "Dragon Bow", "Mythril Bow", "Starsteel Bow", "Void Piercer", "Celestial Arc", "Abyssal Recurve", "Demonwing Bow"],
+  staff: ["Simple Staff", "Advanced Staff", "Knight Staff", "Runic Staff", "Dragon Staff", "Mythril Staff", "Starsteel Staff", "Void Scepter", "Celestial Rod", "Abyssal Scepter", "Demon Staff"]
+};
+const ANAMES = ["Simple Armor", "Advanced Armor", "Knight Armor", "Runic Mail", "Dragon Scale Armor", "Mythril Armor", "Starsteel Armor", "Void Plate", "Celestial Mail", "Abyssal Plate", "Demon-Forged Plate"];
+const L_ATK = [5, 10, 15, 22, 30, 38, 46, 56, 66, 78, 90], L_DEF = [3, 6, 10, 15, 22, 28, 34, 42, 50, 58, 68], L_ROLL = [0, 2, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const L_COST = [50, 150, 300, 550, 900, 1300, 1800, 2600, 3400, 4400, 5600], L_AT = [0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+const wDesc = (wt, atk, roll) => `${WT[wt].n}: +${atk} damage${roll ? `, +${roll} attack d20` : ""}`;
+const aDesc = (def, roll) => `+${def} Defense${roll ? `, +${roll} defense d20` : ""}`;
+const ITEMS = {
+  pot: { n: "HP Potion", i: "🧪", cat: "c", cost: 15, heal: 0.2, d: "Heals 20% HP" },
+  spp: { n: "SP Potion", i: "🔷", cat: "c", cost: 20, spPct: 0.3, d: "Restores 30% max SP" },
+  gpot: { n: "Greater HP Potion", i: "⚗️", cat: "c", cost: 45, heal: 0.5, shopAt: 2, d: "Heals 50% HP" },
+  gspp: { n: "Greater SP Potion", i: "💠", cat: "c", cost: 50, spPct: 0.6, shopAt: 2, d: "Restores 60% max SP" },
+  elixir: { n: "Elixir", i: "🍷", cat: "c", cost: 120, heal: 1, br: 1, shopAt: 1, d: "Exclusive: heals 100% HP" },
+  ether: { n: "Ether", i: "🔮", cat: "c", cost: 100, spPct: 1, br: 1, shopAt: 1, d: "Exclusive: restores 100% SP" },
+  band: { n: "Fighter’s Band", cat: "r", cost: 120, floor: 1, d: "Accessory: a d6 roll of 1 deals 25% damage instead of missing" },
+  clover: { n: "Lucky Clover", cat: "r", cost: 100, roll: 1, d: "Accessory: +1 to all your d20 rolls" },
+  amulet: { n: "Vitality Amulet", cat: "r", cost: 80, hp: 20, d: "Accessory: +20 max HP" },
+  pendant: { n: "Mana Pendant", cat: "r", cost: 90, sp: 4, d: "Accessory: +4 max SP" },
+  coin: { n: "Gold Coin", cat: "r", cost: 100, gold: 0.25, d: "Accessory: +25% credits from victories" },
+  gaunt: { n: "Power Gauntlet", cat: "r", cost: 250, atk: 6, shopAt: 3, d: "Accessory: +6 damage" },
+  icharm: { n: "Iron Charm", cat: "r", cost: 250, def: 5, shopAt: 3, d: "Accessory: +5 Defense" },
+  arc: { n: "Arcane Ring", cat: "r", cost: 400, sp: 8, regen: 1, shopAt: 4, d: "Accessory: +8 max SP, +1 SP every turn" },
+  belt: { n: "Titan’s Belt", cat: "r", cost: 450, hp: 60, shopAt: 4, d: "Accessory: +60 max HP" },
+  seal: { n: "Merchant’s Seal", cat: "r", cost: 500, gold: 0.5, shopAt: 5, d: "Accessory: +50% credits from victories" },
+  brooch: { n: "Warlord’s Brooch", cat: "r", cost: 800, atk: 14, def: 8, shopAt: 6, d: "Accessory: +14 damage, +8 Defense" },
+  heart: { n: "Titan’s Heart", cat: "r", cost: 1800, hp: 120, shopAt: 7, d: "Accessory: +120 max HP" },
+  archmage: { n: "Archmage Pendant", cat: "r", cost: 2400, sp: 14, regen: 2, shopAt: 8, d: "Accessory: +14 max SP, +2 SP every turn" },
+  // exclusive (hidden bazaar) accessories and armor; each shop sells different goods
+  emblem: { n: "Hero’s Emblem", cat: "r", cost: 900, atk: 10, def: 8, roll: 2, br: 1, shopAt: 2, d: "Exclusive: +10 damage, +8 Defense, +2 d20" },
+  locket: { n: "Warding Locket", cat: "r", cost: 600, def: 10, hp: 40, br: 1, shopAt: 2, d: "Exclusive: +10 Defense, +40 max HP" },
+  dice: { n: "Lucky Dice", cat: "r", cost: 700, roll: 3, br: 1, shopAt: 3, d: "Exclusive: +3 to all your d20 rolls" },
+  eye: { n: "Dragon’s Eye", cat: "r", cost: 1500, atk: 14, floor: 1, br: 1, shopAt: 5, d: "Exclusive: +14 damage, d6 of 1 deals 25%" },
+  phoenix: { n: "Phoenix Feather", cat: "r", cost: 2200, hp: 120, regen: 2, br: 1, shopAt: 6, d: "Exclusive: +120 max HP, +2 SP every turn" },
+  hourglass: { n: "Time Hourglass", cat: "r", cost: 2600, roll: 4, br: 1, shopAt: 7, d: "Exclusive: +4 to all your d20 rolls" },
+  crown: { n: "Crown of Heroes", cat: "r", cost: 5000, atk: 20, def: 14, roll: 3, br: 1, shopAt: 9, d: "Exclusive: +20 damage, +14 Defense, +3 d20" },
+  cloak: { n: "Phoenix Cloak", cat: "a", cost: 700, def: 18, roll: 4, br: 1, shopAt: 1, d: "Exclusive: " + aDesc(18, 4) },
+  aether: { n: "Aether Mail", cat: "a", cost: 1500, def: 30, roll: 6, br: 1, shopAt: 4, d: "Exclusive: " + aDesc(30, 6) },
+  cosmic: { n: "Cosmic Shroud", cat: "a", cost: 2400, def: 46, roll: 7, br: 1, shopAt: 5, d: "Exclusive: " + aDesc(46, 7) },
+  eclipse: { n: "Eclipse Mantle", cat: "a", cost: 3000, def: 52, roll: 8, br: 1, shopAt: 6, d: "Exclusive: " + aDesc(52, 8) },
+  prism: { n: "Prism Veil", cat: "a", cost: 4600, def: 66, roll: 9, br: 1, shopAt: 8, d: "Exclusive: " + aDesc(66, 9) },
+  dread: { n: "Dread Plate", cat: "a", cost: 6200, def: 80, roll: 11, br: 1, shopAt: 9, d: "Exclusive: " + aDesc(80, 11) }
+};
+for (const wt in WT) WNAMES[wt].forEach((n, L) => { ITEMS[WT[wt].p + L] = { n, cat: "w", wt, cost: L_COST[L], atk: L_ATK[L], roll: L_ROLL[L], shopAt: L_AT[L], d: wDesc(wt, L_ATK[L], L_ROLL[L]) }; });
+ANAMES.forEach((n, L) => { ITEMS["a" + L] = { n, cat: "a", cost: L_COST[L], def: L_DEF[L], roll: L_ROLL[L], shopAt: L_AT[L], d: aDesc(L_DEF[L], L_ROLL[L]) }; });
+// exclusive weapon families (one per weapon type, sold in the hidden bazaar of that stage)
+[[0, "Shadow", 12, 4, 220], [3, "Sun", 34, 6, 1000], [5, "Star", 58, 7, 2400], [7, "Tempest", 80, 9, 4000], [9, "Cataclysm", 98, 11, 6000]].forEach(([t, nm, atk, roll, cost]) => {
+  for (const wt in WT) ITEMS[`ex${t}_${WT[wt].p}`] = { n: `${nm} ${WT[wt].noun}`, cat: "w", wt, cost, atk, roll, br: 1, shopAt: t, d: "Exclusive: " + wDesc(wt, atk, roll) };
+});
+// boss rewards: far stronger than shop gear of the next few stages so they stay useful (weapons come in your class’s weapon type)
+[["w", "Hydra", 32, 4, 700], ["a", "Dragonheart Plate", 30, 4, 800], ["w", "Frostbite", 48, 5, 1100], ["a", "Lich Shroud", 44, 5, 1400], ["w", "Magma", 68, 6, 1900], ["a", "Kraken Carapace", 60, 7, 2400], ["w", "Stormcall", 92, 8, 3000], ["a", "Prism Aegis", 74, 9, 3600], ["w", "Void", 104, 10, 4400], ["a", "Demonplate", 90, 11, 5600]].forEach(([t, nm, v, roll, cost], s) => {
+  if (t === "w") for (const wt in WT) ITEMS[`bw${s}_${WT[wt].p}`] = { n: `${nm} ${WT[wt].noun}`, cat: "w", wt, cost, atk: v, roll, excl: 1, d: "Boss reward: " + wDesc(wt, v, roll) };
+  else ITEMS["ba" + s] = { n: nm, cat: "a", cost, def: v, roll, excl: 1, d: "Boss reward: " + aDesc(v, roll) };
+});
+for (const wt in WT) ITEMS[`cal_${WT[wt].p}`] = { n: `Calamitite ${WT[wt].noun}`, cat: "w", wt, cost: 9000, atk: 130, roll: 13, excl: 1, d: "Final boss reward: " + wDesc(wt, 130, 13) };
+ITEMS.calA = { n: "Calamitite Armor", cat: "a", cost: 9000, def: 110, roll: 13, excl: 1, d: "Final boss reward: " + aDesc(110, 13) };
+const SLOT = { w: "wep", a: "arm", r: "acc" };
+
+// ---------- skills ----------
+const sk = (n, i, wt, sp, cost, shopAt, o = {}) => ({ n, i, wt, sp, cost, shopAt, ...o });
+const SKILLS = {
+  aegis: sk("Simple Aegis", "🛡", "any", 5, 0, 0, { shield: 0.25 }),
+  mend: sk("Mend", "💚", "any", 4, 60, 0, { heal: 0.2 }),
+  gmend: sk("Greater Mend", "💖", "any", 8, 200, 1, { heal: 0.4 }),
+  drain: sk("Life Drain", "🩸", "any", 12, 300, 2, { pct: 0.6, drain: 1 }),
+  light: sk("Divine Light", "✨", "any", 14, 700, 4, { heal: 0.7 }),
+  wind: sk("Second Wind", "🍃", "any", 12, 1100, 6, { heal: 0.6, shield: 0.2 }),
+  angel: sk("Guardian Angel", "👼", "any", 18, 2400, 8, { heal: 1 }),
+  sanct: sk("Sanctuary", "⛪", "any", 16, 1200, 4, { heal: 0.5, shield: 0.5, br: 1 }),
+  slash: sk("Power Slash", "⚔️", "sword", 6, 0, 0, { pct: 0.6 }),
+  cleave: sk("Cleave", "🪓", "sword", 9, 120, 0, { pct: 1, roll: 6 }),
+  wave: sk("Wave Slash", "🌊", "sword", 8, 200, 1, { pct: 0.7, range: 3 }),
+  whirl: sk("Whirlwind", "🌀", "sword", 14, 450, 2, { pct: 1.4, roll: 4 }),
+  bladestorm: sk("Blade Storm", "🗡️", "sword", 18, 800, 4, { pct: 1.8, roll: 3 }),
+  exec: sk("Executioner", "💥", "sword", 22, 1400, 6, { pct: 2.6, roll: -1 }),
+  dslash: sk("Dragon Slash", "🐉", "sword", 28, 2400, 8, { pct: 3.4, roll: -3 }),
+  spirit: sk("Spirit Blade", "👻", "sword", 14, 2000, 6, { pct: 1.6, roll: 5, br: 1 }),
+  bash: sk("Shield Bash", "🔨", "gauntlet", 5, 0, 0, { pct: 0.5, slow: 1 }),
+  holy: sk("Holy Guard", "🙏", "gauntlet", 8, 150, 0, { shield: 0.4, heal: 0.1 }),
+  layh: sk("Lay on Hands", "🤲", "gauntlet", 9, 250, 1, { heal: 0.35 }),
+  wall: sk("Iron Wall", "🧱", "gauntlet", 9, 350, 2, { shield: 0.5 }),
+  smite: sk("Smite", "⚡", "gauntlet", 12, 500, 2, { pct: 1.2, roll: 5 }),
+  bastion: sk("Aegis Bastion", "🏰", "gauntlet", 12, 1100, 5, { shield: 0.75 }),
+  hammer: sk("Divine Hammer", "🔱", "gauntlet", 20, 1500, 6, { pct: 2.2, roll: 0, slow: 1 }),
+  sacred: sk("Sacred Aegis", "✝️", "gauntlet", 16, 2200, 8, { shield: 0.85, heal: 0.3 }),
+  knives: sk("Throwing Knives", "🔪", "dagger", 4, 0, 0, { pct: 0.5, range: 3 }),
+  stab: sk("Backstab", "🗡️", "dagger", 5, 90, 0, { pct: 0.7 }),
+  venom: sk("Venom Blade", "☠️", "dagger", 8, 220, 1, { pct: 0.5, burn: 1 }),
+  smoke: sk("Smoke Bomb", "💨", "dagger", 7, 300, 2, { pct: 0.25, range: 3, slow: 1 }),
+  flurry: sk("Shadow Flurry", "🌑", "dagger", 12, 600, 3, { pct: 1.2, roll: 6 }),
+  assassinate: sk("Assassinate", "🎯", "dagger", 16, 900, 4, { pct: 2, roll: 2 }),
+  blossom: sk("Death Blossom", "🥀", "dagger", 22, 1800, 7, { pct: 3, roll: -1 }),
+  vamp: sk("Vampiric Strike", "🧛", "dagger", 14, 260, 0, { pct: 1, roll: 7, drain: 1, br: 1 }),
+  pshot: sk("Power Shot", "🏹", "bow", 5, 0, 0, { pct: 0.6, range: 4 }),
+  multi: sk("Multishot", "🎯", "bow", 9, 120, 0, { pct: 1, roll: 7, range: 4 }),
+  parrow: sk("Poison Arrow", "🐍", "bow", 8, 250, 1, { pct: 0.5, range: 5, burn: 1 }),
+  farrow: sk("Frost Arrow", "🧊", "bow", 10, 450, 2, { pct: 0.7, range: 4, slow: 1 }),
+  piercing: sk("Piercing Arrow", "📍", "bow", 14, 600, 3, { pct: 1.8, roll: 3, range: 5 }),
+  rain: sk("Rain of Arrows", "🌧️", "bow", 20, 1300, 5, { pct: 2.5, roll: 0, range: 6 }),
+  sniper: sk("Sniper Shot", "🔭", "bow", 24, 2300, 8, { pct: 3.6, roll: -3, range: 7 }),
+  volley: sk("Starburst Volley", "🌠", "bow", 18, 3000, 8, { pct: 2.4, roll: 3, range: 6, br: 1 }),
+  mmissile: sk("Magic Missile", "✨", "staff", 4, 0, 0, { pct: 0.4, range: 3 }),
+  fire: sk("Fireball", "🔥", "staff", 7, 80, 0, { pct: 0.5, burn: 1, range: 3 }),
+  thunder: sk("Thunder", "⚡", "staff", 10, 100, 0, { pct: 1, roll: 8, range: 4 }),
+  frost: sk("Frost Nova", "❄️", "staff", 8, 180, 1, { pct: 0.6, slow: 1, range: 3 }),
+  arcane: sk("Arcane Burst", "💫", "staff", 12, 380, 2, { pct: 1.1, roll: 5, range: 4 }),
+  meteor: sk("Meteor", "☄️", "staff", 14, 450, 2, { pct: 1.5, roll: 5, range: 5 }),
+  storm: sk("Thunderstorm", "🌩️", "staff", 13, 700, 2, { pct: 1.8, roll: 4, slow: 1, range: 4, br: 1 }),
+  soul: sk("Soul Rend", "💀", "staff", 20, 800, 3, { pct: 2.5, roll: -2, range: 5 }),
+  blizzard: sk("Blizzard", "🌨️", "staff", 12, 600, 4, { pct: 1, roll: 7, slow: 1, range: 4 }),
+  inferno: sk("Inferno", "🌋", "staff", 16, 900, 5, { pct: 1.2, roll: 6, burn: 1, range: 4 }),
+  judge: sk("Judgment", "⚖️", "staff", 18, 1000, 5, { pct: 2, roll: 3, range: 5 }),
+  rift: sk("Void Rift", "🌌", "staff", 25, 1500, 6, { pct: 3.5, roll: -4, range: 6 }),
+  starfall: sk("Starfall", "🌟", "staff", 28, 2600, 7, { pct: 3, roll: 1, range: 6 }),
+  blackhole: sk("Black Hole", "⚫", "staff", 34, 3600, 9, { pct: 4.5, roll: -3, range: 7 })
+};
+function descSkill(s) {
+  const b = [];
+  if (s.pct) b.push((s.roll !== undefined ? `d20 duel ${s.roll >= 0 ? "+" : ""}${s.roll}: on a hit ` : "Guaranteed ") + `${Math.round(s.pct * 100)}% ATK damage`);
+  if (s.drain) b.push("heal 20% of damage dealt");
+  if (s.burn) b.push("burn 2 x 3 turns");
+  if (s.slow) b.push("enemy d20 -3 for 2 turns");
+  if (s.heal) b.push(`heal ${Math.round(s.heal * 100)}% max HP`);
+  if (s.shield) b.push(`-${Math.round(s.shield * 100)}% damage taken for 3 turns`);
+  if (s.pct) b.push(s.range ? `range ${s.range}` : "melee");
+  return (s.br ? "Exclusive: " : "") + b.join("; ") + ".";
+}
+for (const id in SKILLS) SKILLS[id].d = descSkill(SKILLS[id]);
+const DROPS = {
+  Goblin: [["pot", .3], ["spp", .2], ["W0", .06], ["clover", .04], ["coin", .04]],
+  Orc: [["pot", .4], ["spp", .25], ["a0", .1], ["W1", .03], ["amulet", .06], ["pendant", .05], ["band", .04]],
+  Skeleton: [["pot", .3], ["spp", .2], ["W2", .04], ["a2", .05], ["clover", .04]],
+  Wraith: [["gpot", .12], ["gspp", .12], ["W3", .03], ["a3", .04], ["pendant", .05], ["amulet", .05]],
+  Troll: [["gpot", .2], ["gspp", .15], ["W4", .02], ["a4", .03], ["band", .04], ["coin", .05]],
+  Golem: [["gpot", .25], ["gspp", .2], ["W5", .02], ["a5", .03], ["gaunt", .05], ["icharm", .05]],
+  Dragonkin: [["gpot", .3], ["gspp", .25], ["W6", .02], ["a6", .02], ["arc", .04], ["belt", .04], ["seal", .03]],
+  Revenant: [["gpot", .3], ["gspp", .25], ["W7", .02], ["a7", .02], ["brooch", .04], ["heart", .04]],
+  Demon: [["gpot", .35], ["gspp", .3], ["W8", .02], ["a8", .02], ["archmage", .03], ["heart", .05]]
+};
+const D6_PCT = [0, 0, 0.25, 0.5, 0.75, 1, 1.25];
+const d = n => 1 + Math.floor(Math.random() * n);
+const sleep = ms => new Promise(r => setTimeout(r, ms * SET.speed));
+const $ = id => document.getElementById(id);
+
+// ---------- classes ----------
+const CLASSES = {
+  sword: { n: "Swordsman", i: "⚔️", dmg: 1, hp: 1, def: 1, sp: 0, turn: 1, range: 0, wt: "sword", start: "slash", d: "Balanced close-range fighter. Starts with a Sword and Power Slash." },
+  paladin: { n: "Paladin", i: "🛡️", dmg: 0.8, hp: 1.15, def: 1.1, sp: 0, turn: 1, range: 0, wt: "gauntlet", start: "bash", d: "+15% HP, +10% DEF, -20% damage. Defensive close-quarters Gauntlet skills. Starts with Gauntlets and Shield Bash." },
+  rogue: { n: "Rogue", i: "🗡️", dmg: 0.4, hp: 0.6, def: 1, sp: 0, turn: 2, range: 0, wt: "dagger", start: "knives", d: "Acts twice per enemy turn (hit and run), but -60% damage and -40% HP. Starts with a Dagger and Throwing Knives." },
+  archer: { n: "Archer", i: "🏹", dmg: 0.75, hp: 0.8, def: 1, sp: 0, turn: 1, range: 2, wt: "bow", start: "pshot", d: "+2 range on ranged attacks, -25% damage, -20% HP. Starts with a Bow and Power Shot." },
+  mage: { n: "Mage", i: "🔮", dmg: 0.6, hp: 1, def: 1, sp: 20, turn: 1, range: 0, wt: "staff", start: "mmissile", d: "+20 SP, -40% damage, a huge variety of magic. Starts with a Staff and Magic Missile." }
+};
+const freshP = () => ({ reg: 0, x: 0, y: 7, px: 0, py: 0, hp: 100, max: 100, baseMax: 100, cr: 0, steps: 0, tick: 0, lv: 1, exp: 0, pts: 0, atkP: 0, defP: 0, sp: 10, maxSp: 10, baseSp: 10, aegis: 0, aegisP: 0.25,
+  br: 0, keys: {}, fast: ["0"], quest: null, board: [], boardTier: -1, qid: 0, cls: "sword",
+  inv: { pot: 1, spp: 0, gpot: 0, gspp: 0 }, gear: [], wep: null, arm: null, acc: null, skills: [], owned: [],
+  diff: "normal", curse: 0, spent: { a: 0, d: 0, s: 0 }, st: { kills: 0, quests: 0, chests: 0, minis: 0, bosses: {}, rag: false }, ach: {}, skin: "wand", cal: {}, divineKey: false, keyItems: {}, amulet: false, peace: false });
+const P = freshP();
+const cls = () => CLASSES[P.cls] || CLASSES.sword;
+const it_ = s => (P[s] ? ITEMS[P[s]] : {});
+const wtype = () => it_("wep").wt || null;
+const atkPower = () => Math.max(1, Math.round((20 + P.atkP + (it_("wep").atk || 0) + (it_("acc").atk || 0)) * cls().dmg));
+const defTotal = () => Math.round((P.defP + (it_("arm").def || 0) + (it_("acc").def || 0)) * cls().def);
+const atkRoll = () => (it_("wep").roll || 0) + (it_("acc").roll || 0) - (P.curse > 0 ? 2 : 0);
+const defRoll = () => (it_("arm").roll || 0) + (it_("acc").roll || 0) - (P.curse > 0 ? 2 : 0);
+const dmult = () => (DIFFS[P.diff] || DIFFS.normal).m;
+const curSkin = () => SKINS.find(k => k.id === P.skin) || SKINS[0];
+const expNeed = () => 8 + 4 * P.lv;
+const spRate = () => 1 + Math.floor(P.maxSp / 20);
+const skSlots = () => Math.min(5, 3 + Math.floor(P.lv / 50));
+const skillUsable = s => s.wt === "any" || wtype() === s.wt;
+const skRange = s => (s.pct ? (s.range ? s.range + (cls().range || 0) : 1) : 0);
+const atkRange = () => { const b = wtype() ? WT[wtype()].range : 1; return b + (b > 1 ? cls().range || 0 : 0); };
+function recalc() {
+  P.max = Math.round((P.baseMax + (it_("acc").hp || 0)) * cls().hp); P.maxSp = P.baseSp + (it_("acc").sp || 0) + cls().sp;
+  P.hp = Math.min(P.hp, P.max); P.sp = Math.min(P.sp, P.maxSp);
+}
+// drop ids like "W3" mean "a weapon of level 3 in your class’s weapon type"
+const resolveId = id => (/^W\d+$/.test(id) ? WT[cls().wt].p + id.slice(1) : id);
+let regions = [], branches = {}, fight = null, busy = false, tab = "c", modalOpen = true, fainted = false, dead = false, started = false;
+
+function log(t) {
+  const el = document.createElement("div");
+  el.textContent = t;
+  $("log").prepend(el);
+  while ($("log").children.length > 50) $("log").lastChild.remove();
+}
+
+
+// ---------- maps ----------
+function rng(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const rint = (r, a, b) => a + Math.floor(r() * (b - a + 1));
+const MW = g => g[0].length, MH = g => g.length;
+const isHub = i => i % 10 === 0 && i < 100;
+const tierOf = i => Math.min(9, Math.floor(i / 10));
+const stageLabel = (i, dp) => (i >= SECRET ? "???" : `${tierOf(i) + 1}-${i % 10 + 1}${dp ? "-" + (dp >= 11 ? SHRINES[dp - 11].n : "bcde"[dp - 1]) : ""}`);
+function edgePt(r, w, h) {
+  const s = Math.floor(r() * 4), a = r();
+  return s === 0 ? [0, Math.floor(a * h)] : s === 1 ? [w - 1, Math.floor(a * h)] : s === 2 ? [Math.floor(a * w), 0] : [Math.floor(a * w), h - 1];
+}
+const borderPt = (r, w, h) => { const s = Math.floor(r() * 4), a = 1 + Math.floor(r() * (s < 2 ? h - 2 : w - 2)); return s === 0 ? [0, a] : s === 1 ? [w - 1, a] : s === 2 ? [a, 0] : [a, h - 1]; };
+const inner = ([x, y], w, h) => [x === 0 ? 1 : x === w - 1 ? w - 2 : x, y === 0 ? 1 : y === h - 1 ? h - 2 : y];
+const dist = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
+const BLOCK = "#oC";
+// Random shortest path between two tiles, drawn as a stone path. Returns false if unreachable.
+function carve(g, r, [sx, sy], [tx, ty]) {
+  const w = MW(g), h = MH(g), key = (x, y) => y * w + x, prev = new Map([[key(sx, sy), null]]), q = [[sx, sy]];
+  while (q.length) {
+    const [x, y] = q.shift();
+    if (x === tx && y === ty) break;
+    for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]].sort(() => r() - 0.5)) {
+      const nx = x + dx, ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= w || ny >= h || prev.has(key(nx, ny))) continue;
+      if (BLOCK.includes(g[ny][nx]) && !(nx === tx && ny === ty)) continue;
+      prev.set(key(nx, ny), [x, y]); q.push([nx, ny]);
+    }
+  }
+  if (!prev.has(key(tx, ty))) return false;
+  for (let c = [tx, ty]; c; c = prev.get(key(c[0], c[1]))) if (g[c[1]][c[0]] === ".") g[c[1]][c[0]] = "p";
+  return true;
+}
+function reach(g, [sx, sy]) {
+  const w = MW(g), h = MH(g), seen = new Set([sx + "," + sy]), q = [[sx, sy]];
+  while (q.length) {
+    const [x, y] = q.shift();
+    for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+      const nx = x + dx, ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= w || ny >= h || BLOCK.includes(g[ny][nx]) || seen.has(nx + "," + ny)) continue;
+      seen.add(nx + "," + ny); q.push([nx, ny]);
+    }
+  }
+  return seen;
+}
+const blank = (w, h) => Array.from({ length: h }, () => Array(w).fill("."));
+function trees(g, r, n) {
+  for (let k = 0; k < n; k++) {
+    const x = Math.floor(r() * MW(g)), y = Math.floor(r() * MH(g));
+    if (g[y][x] === ".") g[y][x] = r() < 0.5 ? "#" : "o";
+  }
+}
+function pickSpot(g, r, used) {
+  for (let t = 0; t < 100; t++) {
+    const p = [1 + Math.floor(r() * (MW(g) - 2)), 1 + Math.floor(r() * (MH(g) - 2))];
+    if (g[p[1]][p[0]] === "." && !used.some(u => dist(u, p) < 2)) { used.push(p); return p; }
+  }
+  return null;
+}
+// walled arena: clear ground inside, obstacles all around, one entrance on the border
+function walledArena(r, size) {
+  const g = blank(size, size);
+  for (let x = 0; x < size; x++) for (let y = 0; y < size; y++) if (x === 0 || y === 0 || x === size - 1 || y === size - 1) g[y][x] = r() < 0.5 ? "#" : "o";
+  return g;
+}
+function scatter(g, r, ch, n, prot) {
+  const w = MW(g), h = MH(g);
+  for (let t = 0; t < 400 && n > 0; t++) {
+    const x = 1 + Math.floor(r() * (w - 2)), y = 1 + Math.floor(r() * (h - 2));
+    if (g[y][x] === "." && !prot.some(p => dist(p, [x, y]) <= 2)) { g[y][x] = ch === "o" ? (r() < 0.5 ? "#" : "o") : ch; n--; }
+  }
+}
+// boss arena: 13x13 (15x15 for the final boss). Entrance bottom centre, exit top centre, boss sits two tiles below the exit.
+// Obstacles and hazards only appear from stage 5 on. The podium sits beside the entrance path so it never blocks it.
+function genArena(i) {
+  const B = BOSSES[i], size = i === N - 1 ? 15 : 13, mid = size >> 1, clutter = B.stage >= 5;
+  for (let s = 0; ; s++) {
+    const r = rng(i * 733 + s + 3), g = walledArena(r, size), c = [mid, 2], en = [mid, size - 1], ex = [mid, 0];
+    const pod = [mid + 2, size - 2], prot = [[mid, size - 2], [mid, 1], c, pod, [mid + 1, size - 2], [mid - 1, size - 2]];
+    if (clutter && B.obs === "pillars") [[3, 3], [size - 4, 3], [3, size - 4], [size - 4, size - 4], [mid - 3, mid], [mid + 3, mid]].forEach(([x, y]) => { if (prot.every(p => dist(p, [x, y]) > 2)) g[y][x] = "#"; });
+    if (clutter && B.obs === "scatter") scatter(g, r, "o", 10, prot);
+    if (clutter && B.haz) scatter(g, r, "H", B.haz, prot);
+    g[en[1]][en[0]] = "<"; g[ex[1]][ex[0]] = ">"; g[pod[1]][pod[0]] = "Q";
+    const seen = reach(g, en);
+    if (!seen.has([mid, 1].join()) || !seen.has(c.join()) || !seen.has(pod.join())) continue;
+    g.entry = en; g.exit = ex; g.boss = c; g.podium = pod;
+    return g;
+  }
+}
+// mini boss arena: 11x11, same layout as a boss arena but without an exit; the reward chest appears where the guardian falls
+function genMiniArena(i, d) {
+  const size = 11, mid = 5, clutter = tierOf(i) + 1 >= 5;
+  for (let s = 0; ; s++) {
+    const r = rng(i * 1511 + d * 31 + s + 9), g = walledArena(r, size), en = [mid, size - 1], c = [mid, 2];
+    if (clutter) scatter(g, r, "o", 7, [[mid, size - 2], [mid, 1], c]);
+    g[en[1]][en[0]] = "<";
+    if (!reach(g, en).has(c.join())) continue;
+    g.entry = en; g.mini = c;
+    return g;
+  }
+}
+// 5-1b: symmetrical Hall of Shrines with four gates around a central stair
+function genHall() {
+  const size = 13, mid = 6, g = blank(size, size);
+  for (let x = 0; x < size; x++) for (let y = 0; y < size; y++) if (x === 0 || y === 0 || x === size - 1 || y === size - 1) g[y][x] = (x + y) % 2 ? "#" : "o";
+  for (let k = 1; k < size - 1; k++) { if (g[mid][k] === ".") g[mid][k] = "p"; if (g[k][mid] === ".") g[k][mid] = "p"; }
+  [[2, 2], [size - 3, 2], [2, size - 3], [size - 3, size - 3], [4, 4], [size - 5, 4], [4, size - 5], [size - 5, size - 5]].forEach(([x, y]) => { g[y][x] = "o"; });
+  g[0][mid] = "a"; g[mid][size - 1] = "b"; g[size - 1][mid] = "c"; g[mid][0] = "d";
+  g[mid][mid] = "<";
+  g.entry = [mid, mid]; g.gin = [[mid, 1], [size - 2, mid], [mid, size - 2], [1, mid]];
+  return g;
+}
+// each Elder Dragon’s shrine: a 13x13 arena with the shrine altar in the middle
+function genShrine(i, d) {
+  const size = 13, mid = 6, g = walledArena(rng(i * 91 + d * 7 + 1), size);
+  g[size - 1][mid] = "<"; g[mid][mid] = "Q";
+  g.entry = [mid, size - 1]; g.exit = g.entry; g.podium = [mid, mid]; g.boss = [mid, 2];
+  return g;
+}
+// the sealed chamber after Lucifugus: 19x19 with a single podium
+function genSecret() {
+  const size = 19, mid = 9, g = walledArena(rng(1717), size);
+  g[size - 1][mid] = "<"; g[mid][mid] = "Q";
+  g.entry = [mid, size - 1]; g.exit = g.entry; g.podium = [mid, mid]; g.boss = [mid, 3];
+  return g;
+}
+// every road region gets its own random grid size; Safeplaces are 12x12
+function genMap(i) {
+  if (i >= SECRET) return genSecret();
+  if (BOSSES[i]) return genArena(i);
+  const br = BRANCH[i], hub = isHub(i);
+  for (let s = 0; ; s++) {
+    const r = rng(i * 977 + s + 11);
+    const w = hub ? 12 : rint(r, 8, 12), h = hub ? 12 : rint(r, 6, 9);
+    const g = blank(w, h), minD = Math.floor((w + h) / 2) - 1;
+    const en = edgePt(r, w, h); let ex = edgePt(r, w, h), tries = 0;
+    while (dist(en, ex) < minD && tries++ < 60) ex = edgePt(r, w, h);
+    if (dist(en, ex) < minD) continue;
+    let ok = true, bp = null;
+    if (hub) {
+      const used = [en, ex], sp = pickSpot(g, r, used), kp = pickSpot(g, r, used), gd = pickSpot(g, r, used), yp = pickSpot(g, r, used), wp = pickSpot(g, r, used);
+      if (!sp || !kp || !gd || !yp || !wp) continue;
+      g[sp[1]][sp[0]] = "S"; g[kp[1]][kp[0]] = "K"; g[gd[1]][gd[0]] = "G"; g[yp[1]][yp[0]] = "Y"; g[wp[1]][wp[0]] = "W"; g.shop = sp; g.skill = kp; g.guild = gd; g.hall = yp; g.tailor = wp;
+      ok = carve(g, r, en, sp) && carve(g, r, sp, kp) && carve(g, r, kp, gd) && carve(g, r, gd, yp) && carve(g, r, yp, wp) && carve(g, r, wp, ex);
+      if (ok && br) {
+        bp = edgePt(r, w, h);
+        if (dist(bp, en) < 3 || dist(bp, ex) < 3 || g[bp[1]][bp[0]] !== ".") continue;
+        ok = carve(g, r, en, bp);
+      }
+    } else {
+      ok = carve(g, r, en, ex);
+      if (ok && br) {
+        bp = edgePt(r, w, h);
+        if (dist(bp, en) < 3 || dist(bp, ex) < 3 || g[bp[1]][bp[0]] !== ".") continue;
+        ok = carve(g, r, en, bp);
+      }
+    }
+    if (!ok) continue;
+    trees(g, r, Math.round(w * h * (hub ? 0.06 : 0.14)));
+    g[en[1]][en[0]] = i > 0 ? "<" : "p"; g[ex[1]][ex[0]] = ">";
+    if (bp) { g[bp[1]][bp[0]] = br.lock ? "L" : "v"; g.branch = bp; }
+    g.entry = en; g.exit = ex;
+    return g;
+  }
+}
+// side path chain (b..e): winding paths, ending in a block puzzle, riddle chamber, mini boss arena or exclusive shop
+function genBranch(i, d) {
+  if (d >= 11) return genShrine(i, d);
+  const br = BRANCH[i], k = d === br.depth ? br.k : "path";
+  if (k === "hall") return genHall();
+  if (k === "mini") return genMiniArena(i, d);
+  for (let s = 0; ; s++) {
+    const r = rng(i * 1319 + d * 97 + s + 5), w = rint(r, 9, 11), h = rint(r, 7, 8), g = blank(w, h);
+    const en = edgePt(r, w, h), used = [en];
+    let ok = true;
+    if (k === "path") {
+      let ex = edgePt(r, w, h), tr = 0;
+      while (dist(en, ex) < 7 && tr++ < 60) ex = edgePt(r, w, h);
+      if (dist(en, ex) < 7) continue;
+      ok = carve(g, r, en, ex); g.exit = ex;
+    } else if (k === "shop") {
+      const sp = pickSpot(g, r, used);
+      if (!sp) continue;
+      g[sp[1]][sp[0]] = "S"; g.shop = sp; ok = carve(g, r, en, sp);
+    } else if (k === "block") {
+      const dd = [[1, 0], [-1, 0], [0, 1], [0, -1]][Math.floor(r() * 4)], kk = 2 + Math.floor(r() * 2);
+      const B = [2 + Math.floor(r() * (w - 4)), 2 + Math.floor(r() * (h - 4))];
+      const bs = [B[0] - dd[0] * kk, B[1] - dd[1] * kk], pu = [bs[0] - dd[0], bs[1] - dd[1]];
+      if (pu[0] < 1 || pu[1] < 1 || pu[0] > w - 2 || pu[1] > h - 2) continue;
+      for (let t = 0; t <= kk + 1; t++) { const x = pu[0] + dd[0] * t, y = pu[1] + dd[1] * t; g[y][x] = "p"; used.push([x, y]); }
+      g[B[1]][B[0]] = "_"; g.button = B; g.blockStart = bs;
+      const ch = pickSpot(g, r, used), lv = pickSpot(g, r, used);
+      if (!ch || !lv) continue;
+      g[ch[1]][ch[0]] = "C"; g[lv[1]][lv[0]] = "Z";
+      ok = carve(g, r, en, pu) && carve(g, r, en, ch) && carve(g, r, en, lv);
+    } else {
+      const pts = [0, 1, 2, 3, 4, 5].map(() => pickSpot(g, r, used));
+      if (pts.some(p => !p)) continue;
+      g[pts[0][1]][pts[0][0]] = "T";
+      pts.slice(1, 5).forEach((p, n) => g[p[1]][p[0]] = String(n + 1));
+      g[pts[5][1]][pts[5][0]] = "C";
+      g.seq = [0, 1, 2, 3].sort(() => r() - 0.5).slice(0, 3);
+      g.rid = g.seq.map(c => RIDDLES[c][Math.floor(r() * 3)]);
+      ok = pts.every(p => carve(g, r, en, p));
+    }
+    if (!ok) continue;
+    trees(g, r, Math.round(w * h * 0.1));
+    g[en[1]][en[0]] = "<"; g.entry = en;
+    if (g.exit) g[g.exit[1]][g.exit[0]] = ">";
+    return g;
+  }
+}
+const capOf = i => (isHub(i) || BOSSES[i] || i >= SECRET ? 0 : i % 10 === 1 ? 1 : 3);
+const RES_E = ["🧑‍🌾", "👩‍🍳", "🧓", "👦", "👧", "🧑‍🔧", "🐕", "🐈", "🐓"];
+const RES_SAY = ["“Lovely day, isn’t it?”", "“The road ahead is dangerous. Stock up first!”", "“I hear the Guild is paying well today.”", "“Woof!”", "“Mind the goblins out there.”", "“Bosses seal their arenas. Be ready before you go in.”"];
+function makeResidents(rg) {
+  const out = [], w = MW(rg.map), h = MH(rg.map), want = rg.i === 90 ? 2 : 6;   // the last Safeplace is nearly empty
+  for (let k = 0, t = 0; k < want && t < 300; t++) {
+    const x = Math.floor(Math.random() * w), y = Math.floor(Math.random() * h);
+    if ("p.".includes(rg.map[y][x]) && !out.some(o => o.x === x && o.y === y)) { out.push({ x, y, e: RES_E[Math.floor(Math.random() * RES_E.length)] }); k++; }
+  }
+  return out;
+}
+function wander(rg) {
+  if (!rg.res) return;
+  for (const o of rg.res) {
+    if (o.wiz || Math.random() > 0.5) continue;
+    const [dx, dy] = [[1, 0], [-1, 0], [0, 1], [0, -1]][Math.floor(Math.random() * 4)], nx = o.x + dx, ny = o.y + dy;
+    if (nx < 0 || ny < 0 || nx >= MW(rg.map) || ny >= MH(rg.map)) continue;
+    if ("p.".includes(rg.map[ny][nx]) && !(nx === P.x && ny === P.y) && !rg.res.some(q => q.x === nx && q.y === ny)) { o.x = nx; o.y = ny; }
+  }
+}
+function getRegion(i) {
+  if (!regions[i]) {
+    const rg = regions[i] = { i, br: 0, map: genMap(i), enemies: [], q: [], bossDead: false, unlocked: false, tele: [], linger: [], tornados: [], obs: [], secret: i >= SECRET };
+    for (let k = 0; k < capOf(i); k++) spawn(i);
+    if (BRANCH[i] && BRANCH[i].lock) spawn(i, true);
+    if (BOSSES[i]) rg.boss = makeBoss(i);
+    if (isHub(i)) rg.res = makeResidents(rg);
+  }
+  return regions[i];
+}
+function getBranch(i, d) {
+  const key = i + "-" + d;
+  if (!branches[key]) {
+    const shr = d >= 11, kind = shr ? "shrine" : (d === BRANCH[i].depth ? BRANCH[i].k : "path");
+    const rg = branches[key] = { i, d, br: d, kind, map: genBranch(i, d), enemies: [], q: [], cleared: false, chestOpen: false, solved: false, step: 0, clue: false, tele: [], linger: [], tornados: [], obs: [] };
+    if (shr) rg.shrine = SHRINES[d - 11].id;
+    if (kind === "hall") rg.res = [{ x: 5, y: 5, e: "🧙‍♂️", wiz: true }];
+    if (kind === "mini") { rg.boss = makeMini(i, rg); rg.tele = []; }
+    if (kind === "block") rg.block = [...rg.map.blockStart];
+    if (kind === "path") for (let k = 0; k < 3; k++) spawnPath(rg);
+  }
+  return branches[key];
+}
+const R = () => (P.br ? getBranch(P.reg, P.br) : getRegion(P.reg));
+const locName = k => `Region ${stageLabel(+k)}: ${NAMES[+k]}`;
+const atTile = (rg, c) => rg.map[P.y][P.x] === c;
+const shopOpen = rg => atTile(rg, "S") && (rg.br ? rg.kind === "shop" : isHub(rg.i));
+const skillOpen = rg => atTile(rg, "K") && !rg.br && isHub(rg.i);
+const guildOpen = rg => !rg.br && isHub(rg.i) && atTile(rg, "G");
+const mult = i => 1 + 0.07 * (i - 1);
+const tailorOpen = rg => !rg.br && isHub(rg.i) && atTile(rg, "W");
+const hallOpen = rg => !rg.br && isHub(rg.i) && atTile(rg, "Y");
+const lucBase = () => { const m = mult(99); return { hp: 70 * m * 3 * 1.9, atk: 18 * m * 1.3 }; };
+const pickVuln = prev => { const ids = Object.keys(CLASSES).filter(c => c !== prev); return ids[Math.floor(Math.random() * ids.length)]; };
+const bossShell = { cds: {}, bt: 0, astep: 0, burn: 0, slow: 0, enraged: false, countered: false, hits: 0 };
+function makeBoss(i) {
+  const b = BOSSES[i], m = mult(i), u = dmult(), hp = Math.round(70 * m * 3 * (1 + 0.1 * (b.stage - 1)) * u), [x, y] = regions[i].map.boss;
+  return { ...bossShell, cds: {}, x, y, t: { n: b.n, e: b.e }, title: b.title, hp, max: hp, atk: Math.round(18 * m * 1.3 * u), c: Math.round(20 * m * 5), lv: i, pen: 0, boss: true, aoes: b.aoes, tp: b.stage === 10 ? 2 : 0 };
+}
+// mini bosses fight exactly like bosses (active arena battle), just smaller and weaker
+function makeMini(i, rg) {
+  const [n, e] = MINIS[i % MINIS.length], m = mult(i), u = dmult(), s = tierOf(i) + 1, hp = Math.round(70 * m * 1.8 * u), [x, y] = rg.map.mini;
+  return { ...bossShell, cds: {}, x, y, t: { n, e }, hp, max: hp, atk: Math.round(18 * m * 1.1 * u), c: Math.round(20 * m * 3), lv: i, pen: 0, mini: true, aoes: ["target", "circle*"].map(t => mkAoe(t, s)) };
+}
+function makeShrineBoss(rg) {
+  const S = SHRINES.find(z => z.id === rg.shrine), L = lucBase(), u = dmult(), [x, y] = rg.map.boss, hp = Math.round(L.hp * S.hp * u);
+  return { ...bossShell, cds: {}, x, y, t: { n: S.boss, e: S.em }, title: S.title, hp, max: hp, atk: Math.round(L.atk * 1.1 * u), c: 3000, lv: 99, pen: 0, boss: true, shrine: S.id,
+    aoes: S.aoes.split(" ").map(t => mkAoe(t, 10)), noHeal: S.id === "water", tornado: S.id === "wind" ? 1 : 0, fireArena: S.id === "fire", earth: S.id === "earth" };
+}
+function makeRagnarok(rg) {
+  const L = lucBase(), u = dmult(), [x, y] = rg.map.boss, hp = Math.round(L.hp * 2 * u);
+  return { ...bossShell, cds: {}, x, y, t: { n: "Ragnarok", e: "👤" }, title: "Ragnarok, Remnant of the Tyrant", hp, max: hp, atk: Math.round(L.atk * 1.25 * u), c: 8000, lv: 100, pen: 0, boss: true, ragnarok: true, tp: 1,
+    vuln: pickVuln(), noHeal: true, tornado: 1, fireArena: true, earth: true, aoes: "target cone scatter ring cross* deathring* mega* death*".split(" ").map(t => mkAoe(t, 10)) };
+}
+function spawnPath(rg) {
+  if (P.peace) return;
+  const t = TYPES[Math.min(TYPES.length - 1, tierOf(rg.i) + 1)], m = mult(rg.i), w = MW(rg.map), h = MH(rg.map);
+  for (let n = 0; n < 200; n++) {
+    const x = Math.floor(Math.random() * w), y = Math.floor(Math.random() * h);
+    if ("p.".includes(rg.map[y][x]) && Math.abs(x - rg.map.entry[0]) + Math.abs(y - rg.map.entry[1]) > 3 && !rg.enemies.some(e => e.x === x && e.y === y)) {
+      const hp = Math.round(t.hp * m * dmult());
+      rg.enemies.push({ x, y, t, hp, max: hp, atk: Math.round(t.atk * m * dmult()), c: Math.round(t.c * m), lv: rg.i, pen: 0 });
+      return;
+    }
+  }
+}
+function spawn(i, key) {
+  if (P.peace && !key) return;
+  const R2 = regions[i], m = mult(i), w = MW(R2.map), h = MH(R2.map);
+  for (let n = 0; n < 200; n++) {
+    const x = Math.floor(Math.random() * w), y = Math.floor(Math.random() * h);
+    const near = i === P.reg && !P.br && Math.abs(x - P.x) + Math.abs(y - P.y) < 4;
+    if ("p.".includes(R2.map[y][x]) && !near && !R2.enemies.some(e => e.x === x && e.y === y)) {
+      if (key) {
+        const t = TYPES[Math.min(TYPES.length - 1, 1 + Math.floor(i / 14))], hp = Math.round(t.hp * m * 1.8 * dmult());
+        R2.enemies.push({ x, y, t: { n: "Gatekeeper " + t.n, e: "🦹" }, hp, max: hp, atk: Math.round(t.atk * m * 1.2 * dmult()), c: Math.round(t.c * m * 2.5), lv: i, pen: Math.max(0, 6 - i), key: true });
+        return;
+      }
+      const t = TYPES[i === 1 ? 0 : Math.min(TYPES.length - 1, Math.floor(Math.random() * (1 + i / 10)))];
+      const hp = Math.round(t.hp * m * dmult());
+      R2.enemies.push({ x, y, t, hp, max: hp, atk: Math.round(t.atk * m * dmult()), c: Math.round(t.c * m), lv: i, pen: Math.max(0, 6 - i) });
+      return;
+    }
+  }
+}
+function respawns() {
+  if (P.br || P.peace) return;
+  const rg = R();
+  while (rg.q.length && rg.q[0] <= P.tick) { rg.q.shift(); if (rg.enemies.filter(e => !e.key).length < capOf(P.reg)) spawn(P.reg); }
+}
+
+// ---------- guild quests (one quest, one task; harder in later Safeplaces; never in side paths) ----------
+function newQuest(tier) {
+  const lo = tier * 10 + 1, hi = tier * 10 + 8, reg = lo + Math.floor(Math.random() * (hi - lo + 1)), need = 2 + d(3) + tier * 2, roll = Math.random();
+  let o;
+  if (roll < 0.4) { const t = TYPES[reg === 1 ? 0 : Math.floor(Math.random() * (1 + Math.min(TYPES.length - 1, Math.floor(reg / 10))))]; o = { kind: "type", type: t.n, need, have: 0 }; }
+  else if (roll < 0.8) o = { kind: "region", reg, need, have: 0 };
+  else o = { kind: "any", need: need + 2, have: 0 };
+  const cr = Math.round(o.need * (10 + 4 * (o.reg || lo + 4)) * (1 + 0.3 * tier));
+  return { id: ++P.qid, objs: [o], cr, exp: Math.round(cr * 0.5) };
+}
+const objText = o => o.kind === "type" ? `Slay ${o.need} ${o.type}${o.type.endsWith("s") ? "" : "s"}` : o.kind === "region" ? `Defeat ${o.need} enemies in Region ${stageLabel(o.reg)}` : `Defeat ${o.need} enemies anywhere`;
+const questText = q => q.objs.map(objText).join(" + ");
+const questDone = q => q.objs.every(o => o.have >= o.need);
+function questProgress(e) {
+  const q = P.quest;
+  if (!q || P.br || questDone(q)) return;
+  for (const o of q.objs) {
+    if (o.have >= o.need) continue;
+    if (o.kind === "any" || (o.kind === "type" && e.t.n === o.type) || (o.kind === "region" && P.reg === o.reg)) o.have++;
+  }
+  if (questDone(q)) log("Quest ready to claim at the Guild!");
+}
+function fillBoard(tier) { while (P.board.length < 3) P.board.push(newQuest(tier)); P.boardTier = tier; }
+
+
+// ---------- shops, skill halls and guild ----------
+const TABS = [["c", "Consumables"], ["w", "Weapons"], ["a", "Armor"], ["s", "Sell"], ["t", "Travel"]];
+const TAGN = { w: "Weapon", a: "Armor", r: "Accessory" };
+const skTag = s => `<span class="tag">${s.wt === "any" ? "Any weapon" : WT[s.wt].n + " skill"}</span>`;
+const tag = it => (TAGN[it.cat] ? `<span class="tag">${TAGN[it.cat]}</span>` : "");
+const row = (name, desc, btn, act, dis) => `<div class="it"><div><b>${name}</b><br><small>${desc}</small></div><button type="button" data-a="${act}"${dis ? " disabled" : ""}>${btn}</button></div>`;
+function sellRows() {
+  let h = "";
+  for (const id in ITEMS) {
+    const it = ITEMS[id], v = Math.floor(it.cost / 2);
+    if (it.cat === "c" ? P.inv[id] > 0 : P.gear.includes(id)) {
+      const eqd = it.cat !== "c" && P[SLOT[it.cat]] === id;
+      h += row(it.n + (it.cat === "c" ? ` x${P.inv[id]}` : "") + tag(it) + (eqd ? " (equipped)" : ""), it.d, eqd ? "Equipped" : `Sell ${v}`, "sell:" + id, eqd);
+    }
+  }
+  return h || "<small>Nothing to sell.</small>";
+}
+function shopHTML(rg) {
+  const tier = tierOf(rg.i);
+  if (rg.br) {
+    // exclusive shop: one flat list, stock differs per shop
+    let h = "<small>Exclusive wares. No other shop sells these, and every hidden bazaar stocks different goods.</small>";
+    for (const id in ITEMS) {
+      const it = ITEMS[id];
+      if (!it.br || it.excl || it.shopAt !== tier || (it.cat === "w" && it.wt !== cls().wt)) continue;
+      h += it.cat !== "c" && P.gear.includes(id) ? row(it.n + tag(it), it.d, "Owned", "x:" + id, true) : row((it.i ? it.i + " " : "") + it.n + tag(it), it.d, `Buy ${it.cost}`, "buy:" + id, P.cr < it.cost);
+    }
+    for (const id in SKILLS) {
+      const s = SKILLS[id];
+      if (!s.br || s.shopAt !== tier || (s.wt !== "any" && s.wt !== cls().wt)) continue;
+      const own = P.owned.includes(id);
+      h += row(`${s.i} ${s.n} (${s.sp} SP)${skTag(s)}`, s.d, own ? "Owned" : `Buy ${s.cost}`, "skb:" + id, own || P.cr < s.cost);
+    }
+    return h + `<div class="it"><b>Sell your items</b></div>` + sellRows();
+  }
+  const stocked = it => !it.excl && !it.br && (it.shopAt || 0) <= tier;
+  if (!TABS.some(([k]) => k === tab)) tab = "c";
+  let h = `<div class="tabs">${TABS.map(([k, n]) => `<button type="button" data-t="${k}"${k === tab ? ' class="on"' : ""}>${n}</button>`).join("")}</div>`;
+  if (tab === "s") h += sellRows();
+  else if (tab === "t") {
+    const others = P.fast.filter(k => +k !== rg.i);
+    for (const k of others) h += row(locName(k), "Free fast travel", "Travel", "ft:" + k, busy);
+    h += `<small>${others.length ? "" : "No other Safeplaces unlocked yet. "}Step on a Safeplace shop or skill hall to unlock it. Exclusive shops can’t be fast traveled to.</small>`;
+  } else {
+    for (const id in ITEMS) {
+      const it = ITEMS[id];
+      if (!stocked(it) || !(it.cat === tab || (tab === "a" && it.cat === "r"))) continue;
+      if (it.cat === "w" && it.wt !== cls().wt) continue;   // only your class’s weapon type is on sale
+      if (tab !== "c" && P.gear.includes(id)) h += row(it.n + tag(it), it.d, "Owned", "x:" + id, true);
+      else h += row((it.i ? it.i + " " : "") + it.n + tag(it), it.d, `Buy ${it.cost}`, "buy:" + id, P.cr < it.cost);
+    }
+    h += `<small>${tab === "c" ? "" : "Equip items in the Equipment & skills panel. One item per slot (weapon, armor, accessory). "}Later Safeplaces stock better gear.</small>`;
+  }
+  return h;
+}
+function skillHTML(rg) {
+  const tier = tierOf(rg.i);
+  let h = "";
+  for (const id in SKILLS) {
+    const s = SKILLS[id], own = P.owned.includes(id);
+    if (s.br || (s.shopAt || 0) > tier || s.cost === 0 || (s.wt !== "any" && s.wt !== cls().wt)) continue;
+    h += row(`${s.i} ${s.n} (${s.sp} SP)${skTag(s)}`, s.d, own ? "Owned" : `Buy ${s.cost}`, "skb:" + id, own || P.cr < s.cost);
+  }
+  return h + `<small>Skills only work with their own weapon type (shown on the tag). Equip or swap skills any time in the Equipment & skills panel. Later Safeplaces teach stronger skills.</small>`;
+}
+function addGear(id) {
+  const it = ITEMS[id], slot = SLOT[it.cat], cur = P[slot];
+  P.gear.push(id);
+  if (!cur || (it.cat !== "r" && ITEMS[cur].cost < it.cost)) { P[slot] = id; recalc(); log(`Equipped ${it.n}.`); }
+}
+function fastTravel(k) {
+  if (fight || busy || R().boss) return;
+  P.reg = +k; P.br = 0;
+  [P.x, P.y] = R().map.shop; P.px = P.x; P.py = P.y;
+  log(`You fast travel to ${locName(k)}.`);
+  render();
+}
+function shopClick(e) {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.dataset.t) { tab = b.dataset.t; return render(); }
+  const [a, id] = b.dataset.a.split(":");
+  if (a === "ft") return fastTravel(id);
+  const it = ITEMS[id], s = SKILLS[id];
+  if (a === "buy" && P.cr >= it.cost) { P.cr -= it.cost; if (it.cat === "c") P.inv[id]++; else addGear(id); log(`Bought ${it.n}.`); sfx("buy"); }
+  if (a === "skb" && P.cr >= s.cost) { P.cr -= s.cost; P.owned.push(id); log(`Learned ${s.n}.`); sfx("buy"); }
+  if (a === "sell") {
+    const v = Math.floor(it.cost / 2);
+    if (it.cat === "c") P.inv[id]--; else if (P[SLOT[it.cat]] === id) return; else P.gear.splice(P.gear.indexOf(id), 1);
+    P.cr += v; log(`Sold ${it.n} for ${v} credits.`); sfx("buy");
+  }
+  render();
+}
+$("shop").onclick = shopClick;
+$("skillBody").onclick = shopClick;
+// guild: one quest at a time, one task each; the board refreshes whenever you take one
+function guildHTML(rg) {
+  const q = P.quest;
+  let h = `<b>Your quest</b>`;
+  if (!q) h += "<br><small>None. Pick one below (you can only hold one).</small>";
+  else {
+    h += row(questText(q), q.objs.map(o => `${o.have}/${o.need}`).join(" · ") + ` · Reward ${q.cr} credits, ${q.exp} EXP`, questDone(q) ? "Claim" : "In progress", "qc:" + q.id, !questDone(q));
+    h += `<div class="it"><small>Give up this quest</small><button type="button" data-a="qx:0"${P.cr < 20 ? " disabled" : ""}>Cancel (-20 credits)</button></div>`;
+  }
+  h += `<div class="it"><b>Quest board</b><small>Refreshes when you take a quest</small></div>`;
+  for (const b of P.board) h += row(questText(b), `Reward ${b.cr} credits, ${b.exp} EXP`, "Accept", "qa:" + b.id, !!q);
+  return h;
+}
+$("guildBody").onclick = e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  const [a, id] = b.dataset.a.split(":"), tier = tierOf(P.reg);
+  if (a === "qa" && !P.quest) {
+    const q = P.board.find(x => x.id == id);
+    if (q) { P.quest = q; P.board = []; fillBoard(tier); log(`Quest accepted: ${questText(q)}`); }
+  }
+  if (a === "qc" && P.quest && questDone(P.quest)) {
+    const q = P.quest; P.quest = null; P.cr += q.cr; P.st.quests++;
+    log(`Quest complete! +${q.cr} credits, +${q.exp} EXP.`); gainExp(q.exp);
+    P.board = []; fillBoard(tier);
+  }
+  if (a === "qx" && P.quest && P.cr >= 20) { P.cr -= 20; log("You abandoned the quest and paid a 20 credit fee."); P.quest = null; }
+  render();
+};
+
+
+// class hall: change class for half your credits
+const classCost = () => Math.max(1, Math.round(P.cr / 2));
+function hallHTML() {
+  const cost = classCost();
+  let h = `<small>Current class: <b>${cls().i} ${cls().n}</b>. Changing class costs half your credits (${cost} right now) and gives you that class’s starter weapon and skill. Weapons are never forced, but skills only work with their own weapon type.</small>`;
+  for (const id in CLASSES) { const c = CLASSES[id]; h += row(`${c.i} ${c.n}`, c.d, id === P.cls ? "Current" : `Change (${cost})`, "cls:" + id, id === P.cls || P.cr < cost); }
+  return h;
+}
+function grantStarter(id) {
+  const c = CLASSES[id], wid = WT[c.wt].p + "0";
+  if (!P.gear.includes(wid)) { P.gear.push(wid); }
+  if (!P.wep) P.wep = wid;
+  if (!P.owned.includes(c.start)) P.owned.push(c.start);
+  if (!P.skills.includes(c.start) && P.skills.length < skSlots()) P.skills.unshift(c.start);
+  if (!P.owned.includes("aegis")) P.owned.push("aegis");
+  if (!P.skills.includes("aegis") && P.skills.length < skSlots()) P.skills.push("aegis");
+}
+function changeClass(id) {
+  const cost = classCost();
+  if (id === P.cls || P.cr < cost) return;
+  P.cr -= cost; P.cls = id; grantStarter(id); recalc();
+  log(`You became a ${cls().n} (cost ${cost} credits). Starter gear and skill added.`);
+}
+$("hallBody").onclick = e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  const [a, id] = b.dataset.a.split(":");
+  if (a === "cls") changeClass(id);
+  render();
+};
+
+// tailor: skins unlocked by achievements
+function tailorHTML() {
+  let h = `<small>Skins can only be earned by completing achievements. Achievements: ${Object.keys(P.ach).length}/${ACH.length}</small>`;
+  for (const k of SKINS) {
+    const open = !k.ach || P.ach[k.ach], a = ACH.find(x => x.id === k.ach);
+    h += row(`${k.e} ${k.n}`, open ? "Unlocked" : `Locked: ${a.n} (${a.d})`, P.skin === k.id ? "Wearing" : open ? "Wear" : "Locked", "skin:" + k.id, P.skin === k.id || !open);
+  }
+  return h;
+}
+$("tailorBody").onclick = e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  const [a, id] = b.dataset.a.split(":");
+  if (a === "skin") { const k = SKINS.find(x => x.id === id); if (k && (!k.ach || P.ach[k.ach])) { P.skin = id; log(`You are now wearing the ${k.n} skin.`); } }
+  render();
+};
+function checkAch() {
+  for (const a of ACH) if (!P.ach[a.id] && a.t()) {
+    P.ach[a.id] = true; sfx("achieve");
+    const sk = SKINS.find(k => k.ach === a.id);
+    log(`🏆 Achievement unlocked: ${a.n}!${sk ? ` New skin: ${sk.e} ${sk.n} (visit the 🧵 Tailor).` : ""}`);
+  }
+}
+
+// ---------- equipment & skills panel (usable any time) ----------
+const SLOTN = { wep: "Weapon", arm: "Armor", acc: "Accessory" };
+const grow = (n, dsc, b, a, off) => `<div class="it"><div><b>${n}</b><br><small>${dsc}</small></div><button type="button" data-g="${a}"${busy || off ? " disabled" : ""}>${b}</button></div>`;
+function gearHTML() {
+  let h = `<div class="it"><div><b>Class:</b> ${cls().i} ${cls().n}<br><small>${cls().d}</small></div></div>`;
+  for (const s of ["wep", "arm", "acc"]) h += P[s] ? grow(`${SLOTN[s]}: ${ITEMS[P[s]].n}`, ITEMS[P[s]].d, "Unequip", "u:" + s) : `<div class="it"><div><b>${SLOTN[s]}:</b> empty</div></div>`;
+  for (const id of P.gear) if (!["wep", "arm", "acc"].some(s => P[s] === id)) h += grow(ITEMS[id].n + tag(ITEMS[id]), ITEMS[id].d, `Equip (${TAGN[ITEMS[id].cat]})`, "e:" + id);
+  const keys = [P.divineKey && "🗝️ Divine Key", ...SHRINES.filter(z => P.keyItems[z.key]).map(z => z.keyN), P.amulet && "🐉 Divine Dragon Amulet"].filter(Boolean);
+  if (keys.length) h += `<div class="it"><div><b>Key items</b><br><small>${keys.join(" · ")}</small></div></div>`;
+  const inBattle = !!(fight || R().boss);
+  h += `<div class="it"><b>Skills (${P.skills.length}/${skSlots()} slots)</b><small>${inBattle ? "Skills can’t be changed during a battle" : "Skills need their weapon type equipped"}</small></div>`;
+  for (const id of P.owned) { const s = SKILLS[id], eq = P.skills.includes(id); h += grow(`${s.i} ${s.n} (${s.sp} SP)${skTag(s)}${skillUsable(s) ? "" : " <small>(needs " + WT[s.wt].n + ")</small>"}`, s.d, eq ? "Unequip" : "Equip", (eq ? "su:" : "se:") + id, inBattle); }
+  return h;
+}
+$("gearBody").onclick = e => {
+  const b = e.target.closest("button");
+  if (!b || busy) return;
+  const [a, id] = b.dataset.g.split(":");
+  if (a === "u") P[id] = null;
+  if (a === "e") P[SLOT[ITEMS[id].cat]] = id;
+  if ((a === "su" || a === "se") && (fight || R().boss)) { log("You can’t change skills during a battle."); return; }
+  if (a === "su") P.skills = P.skills.filter(x => x !== id);
+  if (a === "se") { while (P.skills.length >= skSlots()) P.skills.shift(); P.skills.push(id); }
+  recalc(); render();
+};
+
+
+// ---------- rendering ----------
+function questHTML() {
+  const q = P.quest;
+  if (!q) return "<small>No active quest. Visit the 🏛️ Guild in a Safeplace.</small>";
+  return `<div class="it"><div><b>${questText(q)}</b><br><small>${q.objs.map(o => `${o.have}/${o.need}`).join(" · ")}${questDone(q) ? " · ready to claim at the Guild" : ""}</small></div></div>`;
+}
+const dm = b => Math.abs(b.x - P.x) + Math.abs(b.y - P.y);
+const adj = b => dm(b) === 1;
+const durs = (burn, slow) => `${burn > 0 ? ` 🔥${burn}` : ""}${slow > 0 ? ` ❄️${slow}` : ""}`;
+function render() {
+  checkAch();
+  updateMusic();
+  const rg = R(), pal = palOf(P.reg), m = $("map").style, open = shopOpen(rg), kOpen = skillOpen(rg), gOpen = guildOpen(rg), hOpen = hallOpen(rg), tOpen = tailorOpen(rg), ab = rg.boss || null;
+  const w = MW(rg.map), h = MH(rg.map);
+  if (isHub(P.reg) && !P.br) P.sp = P.maxSp;
+  if ((open || kOpen) && P.sp < P.maxSp) { P.sp = P.maxSp; log("The shopkeeper restores your SP."); }
+  if ((open || kOpen) && !rg.br && !P.fast.includes(String(P.reg))) { P.fast.push(String(P.reg)); log("Safeplace unlocked for fast travel."); }
+  if (gOpen && P.boardTier !== tierOf(rg.i)) { P.board = []; fillBoard(tierOf(rg.i)); }
+  ["--m1", "--m2", "--mt", "--mp", "--mk"].forEach((v, k) => m.setProperty(v, pal[k]));
+  m.gridTemplateColumns = `repeat(${w}, 1fr)`;
+  const mw = $("map").clientWidth;
+  m.setProperty("--fs", Math.max(13, Math.min(34, ((mw > 0 ? mw : 440) / w) * 0.62)) + "px");
+  const tl = {};
+  for (const t of rg.tele || []) for (const [x, y] of t.tiles) if (tl[x + "," + y] !== "tb") tl[x + "," + y] = t.death ? "tb" : "tr";
+  const lg = {};
+  for (const l of rg.linger || []) for (const [x, y] of l.tiles) lg[x + "," + y] = 1;
+  let html = "";
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const ch = rg.map[y][x], en = rg.enemies.find(e => e.x === x && e.y === y), rs = rg.res && rg.res.find(o => o.x === x && o.y === y);
+    let cls = ch === "#" ? "w" : ch === "o" ? "k" : "pSKGYWQHMC_ZT1234vL<>abcd".includes(ch) ? "p" : (x + y) % 2 ? "a" : "b";
+    let sym = ch === "#" ? DECO[tierOf(P.reg)] : ch === "o" ? "🪨" : ch === "S" ? "🏪" : ch === "K" ? "🏫" : ch === "G" ? "🏛️" : ch === "Y" ? "🎓" : ch === "Q" ? (rg.shrine ? "⛩️" : rg.secret ? "🔱" : "🏆") : ch === "W" ? "🧵" : "abcd".includes(ch) ? SHRINES["abcd".indexOf(ch)].e : ch === "H" ? (ab ? "☠️" : "") : ch === "_" ? (rg.solved ? "✅" : "🔘") : ch === "Z" ? "🔄" : ch === "C" ? (rg.chestOpen ? "📭" : "📦") : ch === "T" ? "📜" : "1234".includes(ch) ? PILLARS[+ch - 1] : ch === "v" || (ch === "L" && rg.unlocked) ? "🌀" : ch === "L" ? "🔒" : ch === ">" ? (ab ? "⛓️" : "➡️") : ch === "<" ? (ab ? "⛓️" : "⬅️") : "";
+    if (rg.block && rg.block[0] === x && rg.block[1] === y) sym = "🟫";
+    if (rs) sym = rs.e;
+    if (en) sym = en.t.e;
+    if ((rg.tornados || []).some(t => t.x === x && t.y === y)) sym = "🌪️";
+    if (ab && ab.x === x && ab.y === y) sym = ab.t.e;
+    if (x === P.x && y === P.y) { sym = curSkin().e; cls += " me"; }
+    if (tl[x + "," + y]) cls += " " + tl[x + "," + y]; else if (lg[x + "," + y]) cls += " tp";
+    html += `<div class="c ${cls}">${sym}</div>`;
+  }
+  $("map").innerHTML = html;
+  $("pad").classList.toggle("hidden", !!fight);
+  let lab = P.reg >= SECRET ? `Region ???: ${NAMES[SECRET]}` : P.br >= 11 ? SHRINES[P.br - 11].n : `Region ${stageLabel(P.reg, P.br)}: ${P.br ? BNAMES[rg.kind] : NAMES[P.reg]}`;
+  if (P.br >= 11 || P.reg >= SECRET) lab += ab ? " (BOSS FIGHT)" : "";
+  else if (P.br) lab += rg.kind === "riddle" ? (rg.solved ? " (solved)" : rg.clue ? ` (${rg.step}/3 pillars)` : " (read the 📜)") : rg.kind === "block" ? (rg.solved ? " (solved)" : " (push the 🟫 onto the 🔘)") : rg.kind === "mini" ? (rg.cleared ? " (guardian defeated)" : ab ? " (BOSS FIGHT)" : "") : rg.kind === "shop" ? " (exclusive shop)" : "";
+  else lab += isHub(P.reg) ? " (safe)" : BOSSES[P.reg] ? (ab ? " (BOSS FIGHT)" : " (boss defeated, 🏆 summons it again)") : "";
+  $("region").textContent = lab;
+  $("hpn").textContent = `${P.hp} / ${P.max}`;
+  $("hpb").style.width = (P.hp / P.max * 100) + "%";
+  $("gold").textContent = `💰 ${P.cr}`;
+  $("cons").innerHTML = Object.keys(ITEMS).filter(id => ITEMS[id].cat === "c" && P.inv[id] > 0).map(id => `<button type="button" data-u="${id}" title="${ITEMS[id].d}"${busy ? " disabled" : ""}>${ITEMS[id].i} ${ITEMS[id].n} x${P.inv[id]}</button>`).join("")
+    + (P.amulet ? Object.keys(CLASSES).map(c => `<button type="button" data-x="${c}" title="Transform (costs a turn)"${busy || c === P.cls ? " disabled" : ""}>🐉 ${CLASSES[c].i}</button>`).join("") : "");
+  $("stats").textContent = `${cls().i} ${cls().n}  ·  ⚔ Attack ${atkPower()} (${P.wep ? ITEMS[P.wep].n : "no weapon"})  ·  🛡 Defense ${defTotal()} (${P.arm ? ITEMS[P.arm].n : "no armor"})${P.acc ? `  ·  💍 ${ITEMS[P.acc].n}` : ""}  ·  ✨ SP ${P.sp}/${P.maxSp} (+${spRate()}/turn)${P.aegis > 0 ? `  ·  🛡 Aegis -${Math.round(P.aegisP * 100)}% (${P.aegis} turns)` : ""}${P.curse > 0 ? `  ·  ☠ Cursed -2 d20 (${P.curse} turns)` : ""}${P.keys[P.reg] ? "  ·  🗝️ Key" : ""}`;
+  const cap = P.lv >= LV_CAP;
+  $("lvl").textContent = `Level ${P.lv}${cap ? " (MAX)" : ""}  ·  ${P.pts} point${P.pts === 1 ? "" : "s"} to spend  ·  +20 max HP every 10th level  ·  ${skSlots()} skill slots`;
+  $("expn").textContent = cap ? "MAX LEVEL" : `EXP ${P.exp} / ${expNeed()}`;
+  $("expb").style.width = (cap ? 100 : P.exp / expNeed() * 100) + "%";
+  [["upA", "a", "+1 ATK"], ["upD", "d", "+2 DEF"], ["upS", "s", "+1 SP"]].forEach(([id, k, t]) => { $(id).textContent = `${t} (${P.spent[k]}/${SP_CAP})`; $(id).disabled = P.pts < 1 || P.spent[k] >= SP_CAP; });
+  $("shop").classList.toggle("hidden", !open);
+  if (open) { $("shopTitle").textContent = rg.br ? "Exclusive shop" : "Shop"; $("shopBody").innerHTML = shopHTML(rg); }
+  $("skillhall").classList.toggle("hidden", !kOpen);
+  if (kOpen) $("skillBody").innerHTML = skillHTML(rg);
+  $("tailor").classList.toggle("hidden", !tOpen);
+  if (tOpen) $("tailorBody").innerHTML = tailorHTML();
+  $("hall").classList.toggle("hidden", !hOpen);
+  if (hOpen) $("hallBody").innerHTML = hallHTML();
+  $("guild").classList.toggle("hidden", !gOpen);
+  if (gOpen) $("guildBody").innerHTML = guildHTML(rg);
+  $("questBody").innerHTML = questHTML();
+  $("gearBody").innerHTML = gearHTML();
+  const f = fight || ab;
+  $("fight").classList.toggle("hidden", !f);
+  $("atk").disabled = $("run").disabled = $("def").disabled = busy;
+  $("def").classList.toggle("hidden", !!ab); $("run").classList.toggle("hidden", !!ab);
+  $("alegend").classList.toggle("hidden", !ab);
+  if (f) {
+    $("ename").textContent = `${f.t.e} ${f.title || f.t.n} (Lv ${f.lv})${f.boss ? " · BOSS" : f.mini ? " · GUARDIAN" : f.key ? " · KEY HOLDER" : ""}${f.enraged ? " · ENRAGED" : ""}${f.vuln ? ` · only hurt by ${CLASSES[f.vuln].i} ${CLASSES[f.vuln].n}` : ""}${f.noHeal ? " · no healing skills" : ""}${f.pen ? ` · d20 -${f.pen}` : ""}${durs(f.burn, f.slow)}`;
+    $("ehpn").textContent = `${Math.max(f.hp, 0)} / ${f.max}`;
+    $("ehpb").style.width = (Math.max(f.hp, 0) / f.max * 100) + "%";
+    if (ab) { $("atk").disabled = busy || dm(ab) > atkRange(); $("atk").textContent = `Attack (range ${atkRange()})`; } else $("atk").textContent = "Attack";
+    $("skills").innerHTML = P.skills.map(id => {
+      const s = SKILLS[id], bad = !skillUsable(s) || (ab && s.pct && dm(ab) > skRange(s));
+      return `<button type="button" data-s="${id}"${busy || P.sp < s.sp || bad ? " disabled" : ""} title="${s.d}">${s.i} ${s.n} (${s.sp} SP)${s.pct && s.range ? " ↗" + skRange(s) : ""}${skillUsable(s) ? "" : ` · needs ${WT[s.wt].n}`}</button>`;
+    }).join("");
+  }
+}
+
+// ---------- warnings ----------
+function askWarn(title, text, yes, cb) {
+  modalOpen = true;
+  $("warnT").textContent = title; $("warnP").textContent = text; $("warnYes").textContent = yes;
+  $("warn").classList.remove("hidden");
+  $("warnYes").onclick = () => { closeWarn(); cb(); };
+  $("warnNo").onclick = closeWarn;
+}
+function closeWarn() { modalOpen = false; $("warn").classList.add("hidden"); }
+
+// ---------- movement ----------
+function startFight(e) {
+  fight = e;
+  ["d1", "d2", "d3"].forEach(i => $(i).textContent = "–");
+  log(e.mini ? `${e.t.n} guards the chest!` : `A ${e.t.n} (Lv ${e.lv}) attacks you!`);
+}
+function travel(dir) {
+  const to = P.reg + dir, map = regions[to] ? regions[to].map : genMap(to);
+  P.reg = to;
+  [P.x, P.y] = dir > 0 ? map.entry : map.exit;
+  const rg = getRegion(P.reg);
+  log(`You travel to ${NAMES[P.reg]}.`);
+  if (isHub(P.reg)) log("Safeplace restores your SP.");
+  if (rg.boss) log(`${rg.boss.t.n} awakens! The gates seal behind you. Win or fall!`);
+}
+function enterBranch() {
+  P.br = 1;
+  const b = getBranch(P.reg, 1);
+  [P.x, P.y] = b.map.entry;
+  log(`You take the side path to Region ${stageLabel(P.reg, 1)}: ${BNAMES[b.kind]}.`);
+  if (b.boss) log(`${b.boss.t.n} awakens! The gate seals behind you. Win or fall!`);
+}
+function deeperBranch() {
+  P.br++;
+  const b = getBranch(P.reg, P.br);
+  [P.x, P.y] = b.map.entry;
+  log(`You go deeper to Region ${stageLabel(P.reg, P.br)}: ${BNAMES[b.kind]}.`);
+  if (b.boss) log(`${b.boss.t.n} awakens! The gate seals behind you. Win or fall!`);
+  if (b.kind === "riddle") log("Find the 📜 mural, then touch the matching pillars in order to unseal the chest.");
+  if (b.kind === "block") log("Push the 🟫 block onto the 🔘 button. The 🔄 lever resets the block.");
+}
+function enterShrine(n) {
+  P.br = 11 + n;
+  const b = getBranch(P.reg, P.br);
+  [P.x, P.y] = b.map.entry;
+  log(`You step through the gate into the ${SHRINES[n].n}.`);
+}
+function exitBranch() {
+  if (P.br >= 11) { const n = P.br - 11; P.br = 1; [P.x, P.y] = getBranch(P.reg, 1).map.gin[n]; log("You return to the Hall of Shrines."); return; }
+  if (P.br > 1) { P.br--; [P.x, P.y] = getBranch(P.reg, P.br).map.exit; log(`You head back to Region ${stageLabel(P.reg, P.br)}.`); return; }
+  P.br = 0;
+  [P.x, P.y] = getRegion(P.reg).map.branch;
+  log(`You return to ${NAMES[P.reg]}.`);
+}
+function moveEnemies() {
+  const rg = R();
+  for (const e of rg.enemies) {
+    if (fight) break;
+    if (e.mini) continue;
+    const dx = Math.sign(P.x - e.x), dy = Math.sign(P.y - e.y);
+    const opts = Math.abs(P.x - e.x) >= Math.abs(P.y - e.y) ? [[dx, 0], [0, dy]] : [[0, dy], [dx, 0]];
+    for (const [ox, oy] of opts) {
+      if (!ox && !oy) continue;
+      const nx = e.x + ox, ny = e.y + oy;
+      if (nx === P.x && ny === P.y) { startFight(e); break; }
+      if ("p.".includes(rg.map[ny][nx]) && !rg.enemies.some(o => o.x === nx && o.y === ny)) { e.x = nx; e.y = ny; break; }
+    }
+  }
+}
+const miniAhead = (i, d) => { const br = BRANCH[i]; if (!br || br.k !== "mini" || d !== br.depth) return false; const b = branches[i + "-" + d]; return !b || !!b.boss; };
+function pillar(rg, k) {
+  if (rg.solved) return;
+  if (rg.map.seq[rg.step] === k) {
+    rg.step++; log(`The ${PNAMES[k]} pillar glows (${rg.step}/3).`);
+    if (rg.step >= 3) { rg.solved = true; log("The riddle is solved! The chest unseals."); }
+  } else { rg.step = 0; log(`The ${PNAMES[k]} pillar flickers out. The pillars reset.`); }
+}
+function openChest(rg) {
+  const i = rg.i, t = tierOf(i), gold = 80 + i * 18;
+  P.cr += gold; P.st.chests++; sfx("chest"); log(`You open the chest! +${gold} credits.`);
+  const pool = Object.keys(ITEMS).filter(id => { const it = ITEMS[id]; return it.cat !== "c" && !it.excl && (it.shopAt || 0) <= t + 1; });
+  give(pool[Math.floor(Math.random() * pool.length)], "Found");
+  if (Math.random() < 0.5) give(t >= 2 ? "gpot" : "pot", "Found");
+  if (Math.random() < 0.3) {
+    const sk = Object.keys(SKILLS).filter(k => !P.owned.includes(k) && (SKILLS[k].shopAt || 0) <= t + 1);
+    if (sk.length) { const k = sk[Math.floor(Math.random() * sk.length)]; P.owned.push(k); log(`The chest holds a skill scroll: ${SKILLS[k].n}!`); }
+  }
+  rg.chestOpen = true;
+}
+function hazardHit(rg) {
+  const dm = Math.max(1, Math.round(rg.boss.atk * 0.25));
+  P.hp = Math.max(0, P.hp - dm);
+  log(`The hazard burns you for ${dm} damage!`);
+}
+function commit(nx, ny, ch, rg) {
+  P.px = P.x; P.py = P.y; P.x = nx; P.y = ny; P.tick++;
+  const en = rg.enemies.find(e => e.x === nx && e.y === ny);
+  if (en) startFight(en);
+  else if (ch === "<" && P.br) exitBranch();
+  else if (ch === ">" && P.br) deeperBranch();
+  else if (ch === ">") travel(1);
+  else if (ch === "<") travel(-1);
+  else if ((ch === "v" || ch === "L") && !P.br) enterBranch();
+  else if (ch === "T") { rg.clue = true; log(`The mural reads: “Touch the pillar of ${rg.map.rid[0]}, then ${rg.map.rid[1]}, and last ${rg.map.rid[2]}.”`); }
+  else if ("1234".includes(ch) && rg.kind === "riddle") pillar(rg, +ch - 1);
+  else if (ch === "Z" && rg.block) { rg.block = [...rg.map.blockStart]; log("The lever clicks. The block slides back to its start."); }
+  else if ("abcd".includes(ch) && rg.kind === "hall") enterShrine("abcd".indexOf(ch));
+  else if (ch === "Q" && !rg.boss && altarKind(rg)) summon(rg);
+  else {
+    P.steps++; sfx("step");
+    if (P.steps % 5 === 0) P.sp = Math.min(P.maxSp, P.sp + spRate());
+    if (P.steps % 3 === 0) moveEnemies();
+  }
+  respawns();
+  const cur = R();
+  wander(cur);
+  if (ch === "H" && cur.boss && cur === rg) { hazardHit(cur); if (P.hp <= 0) { faint(); return; } }
+  lingerStep(cur); if (dead) return;
+  if (cur.boss && !fight) { arenaTick().then(render); }
+  render();
+}
+function move(dx, dy) {
+  if (fight || busy || modalOpen) return;
+  const rg = R(), nx = P.x + dx, ny = P.y + dy;
+  if (nx < 0 || ny < 0 || nx >= MW(rg.map) || ny >= MH(rg.map) || "#o".includes(rg.map[ny][nx])) return;
+  const ch = rg.map[ny][nx], boss = rg.boss;
+  const rs = rg.res && rg.res.find(o => o.x === nx && o.y === ny);
+  if (rs) { if (rs.wiz) wizardTalk(); else log(RES_SAY[Math.floor(Math.random() * RES_SAY.length)]); return; }
+  if (boss && boss.x === nx && boss.y === ny) { log("Stand next to the boss and use Attack."); return; }
+  if (boss && (ch === "<" || ch === ">")) { log("The gates are sealed. Win or fall!"); return; }
+  if (ch === "C") {
+    if (rg.chestOpen) return;
+    if (!(rg.kind === "riddle" || rg.kind === "block" ? rg.solved : rg.cleared)) { log(rg.kind === "riddle" ? "The chest is sealed. Solve the riddle first." : rg.kind === "block" ? "The chest is sealed. Press the button first." : "A guardian’s seal holds the chest shut."); return; }
+    openChest(rg); render(); return;
+  }
+  if (rg.block && rg.block[0] === nx && rg.block[1] === ny) {
+    const bx = nx + dx, by = ny + dy;
+    if (bx < 0 || by < 0 || bx >= MW(rg.map) || by >= MH(rg.map) || !".p_".includes(rg.map[by][bx])) { log("The block won’t budge."); return; }
+    rg.block = [bx, by];
+    if (rg.map[by][bx] === "_" && !rg.solved) { rg.solved = true; log("Click! The button is pressed. The chest unseals."); }
+  }
+  if (ch === "L" && !rg.unlocked) {
+    if (P.keys[P.reg]) { P.keys[P.reg] = false; rg.unlocked = true; log("You unlock the gate with the Gatekeeper’s key!"); }
+    else { log("The gate is locked. Defeat this region’s Gatekeeper to get the key."); return; }
+  }
+  if (((ch === "v" || ch === "L") && !P.br && miniAhead(P.reg, 1)) || (ch === ">" && P.br && miniAhead(P.reg, P.br + 1))) {
+    askWarn("⚠ Guardian arena ahead", "A guardian waits inside. Once you enter, the gate seals until you win or fall in battle. Be ready!", "Enter", () => commit(nx, ny, ch, R())); return;
+  }
+  if (ch === ">" && !P.br && BOSSES[P.reg + 1]) {
+    const nr = regions[P.reg + 1];
+    if (!nr || nr.boss) { askWarn("⚠ Boss area ahead", "Once you step inside, the gates seal behind you. You must defeat the boss or fall in battle. Make sure your HP, SP and gear are ready.", "Enter", () => commit(nx, ny, ch, R())); return; }
+  }
+  if (ch === "Q" && !rg.boss && altarKind(rg)) {
+    const ak = altarKind(rg);
+    if (ak === "shrine" && !P.divineKey) { log("The shrine is sealed. Only the bearer of the Divine Key may awaken it."); return; }
+    if (ak === "secret" && !P.amulet) { log("The podium is dormant. Only the bearer of the Divine Dragon Amulet may awaken it."); return; }
+    askWarn(ak === "boss" ? "Summon the boss?" : "⚠ Awaken it?", ak === "boss" ? "The podium will call the boss back to the center and seal the gates until one of you falls." : "Once awakened, the gate seals until you win or fall. This is a legendary fight.", "Summon", () => commit(nx, ny, ch, R())); return;
+  }
+  commit(nx, ny, ch, rg);
+}
+
+// ---------- boss arena (real-time-ish battle: you move, the boss answers every 3 steps) ----------
+function aoeTiles(a, b, rg) {
+  const w = MW(rg.map), h = MH(rg.map), out = [];
+  const add = (x, y) => { if (x > 0 && y > 0 && x < w - 1 && y < h - 1 && !"#o".includes(rg.map[y][x]) && !out.some(t => t[0] === x && t[1] === y)) out.push([x, y]); };
+  const cx = b.x, cy = b.y, horiz = Math.abs(P.x - cx) >= Math.abs(P.y - cy);
+  if (a.kind === "circle" || a.kind === "ring" || a.kind === "target") {
+    const mx = a.kind === "target" ? P.x : cx, my = a.kind === "target" ? P.y : cy, r = a.r;
+    for (let dx = -r; dx <= r; dx++) for (let dy = -r; dy <= r; dy++) { const d2 = dx * dx + dy * dy; if (d2 <= r * r + r * 0.5 && (a.kind !== "ring" || d2 > (r - 1) * (r - 1))) add(mx + dx, my + dy); }
+  } else if (a.kind === "line" || a.kind === "cross") {
+    if (horiz || a.kind === "cross") for (let x = 1; x < w - 1; x++) add(x, cy);
+    if (!horiz || a.kind === "cross") for (let y = 1; y < h - 1; y++) add(cx, y);
+  } else if (a.kind === "cone") {
+    const dir = horiz ? (Math.sign(P.x - cx) || 1) : (Math.sign(P.y - cy) || 1);
+    for (let k = 1; k <= a.len; k++) for (let s = -Math.floor(k / 2); s <= Math.floor(k / 2); s++) horiz ? add(cx + dir * k, cy + s) : add(cx + s, cy + dir * k);
+  } else if (a.kind === "scatter") {
+    for (let t = 0; t < 300 && out.length < a.cnt; t++) add(1 + Math.floor(Math.random() * (w - 2)), 1 + Math.floor(Math.random() * (h - 2)));
+  }
+  return out;
+}
+function bossMove(b, rg) {
+  const dx = Math.sign(P.x - b.x), dy = Math.sign(P.y - b.y);
+  const opts = Math.abs(P.x - b.x) >= Math.abs(P.y - b.y) ? [[dx, 0], [0, dy]] : [[0, dy], [dx, 0]];
+  for (const [ox, oy] of opts) {
+    if (!ox && !oy) continue;
+    const nx = b.x + ox, ny = b.y + oy;
+    if (nx === P.x && ny === P.y) continue;
+    if (".pQH".includes(rg.map[ny][nx])) { b.x = nx; b.y = ny; return; }
+  }
+}
+// ---------- arena effects ----------
+function randOpen(rg) {
+  const w = MW(rg.map), h = MH(rg.map);
+  for (let t = 0; t < 300; t++) {
+    const x = 1 + Math.floor(Math.random() * (w - 2)), y = 1 + Math.floor(Math.random() * (h - 2));
+    if (".pQH".includes(rg.map[y][x]) && !(x === P.x && y === P.y) && !(rg.boss && rg.boss.x === x && rg.boss.y === y)) return [x, y];
+  }
+  return [w >> 1, h >> 1];
+}
+const mkTornado = rg => { const [x, y] = randOpen(rg); return { x, y }; };
+function clearArenaFx(rg) {
+  for (const [x, y] of rg.obs || []) if (rg.map[y][x] === "o") rg.map[y][x] = ".";
+  rg.obs = []; rg.tornados = []; rg.linger = []; rg.tele = []; rg.ts = 0;
+}
+function hitPlayer(b, pct, name) {
+  let dmg = Math.max(1, Math.round(b.atk * pct));
+  if (P.aegis > 0) dmg = Math.max(1, Math.round(dmg * (1 - P.aegisP)));
+  P.hp = Math.max(0, P.hp - dmg);
+  log(`${name} hits you for ${dmg} damage!`);
+  if (P.hp <= 0) faint();
+}
+function lingerHit(b, l) {
+  hitPlayer(b, l.pct, `The lingering ${l.n}`);
+  if (!dead && l.debuff) { P.curse = 3; log("You are cursed! Your d20 rolls are -2 for 3 turns."); }
+}
+function lingerStep(rg) {
+  const b = rg.boss;
+  if (!b) return;
+  for (const l of rg.linger || []) if (l.tiles.some(([x, y]) => x === P.x && y === P.y)) { lingerHit(b, l); if (dead) return; }
+}
+function moveTornados(rg) {
+  const b = rg.boss;
+  for (const t of rg.tornados || []) {
+    const dx = Math.sign(P.x - t.x), dy = Math.sign(P.y - t.y);
+    const opts = Math.abs(P.x - t.x) >= Math.abs(P.y - t.y) ? [[dx, 0], [0, dy]] : [[0, dy], [dx, 0]];
+    for (const [ox, oy] of opts) {
+      if (!ox && !oy) continue;
+      const nx = t.x + ox, ny = t.y + oy;
+      if (nx === P.x && ny === P.y) { hitPlayer(b, 0.6, "The tornado"); if (dead) return; const o = randOpen(rg); t.x = o[0]; t.y = o[1]; break; }
+      if (!"#o".includes(rg.map[ny][nx])) { t.x = nx; t.y = ny; break; }
+    }
+  }
+}
+// tornadoes always move every 3 of your steps/actions, even after the boss enrages
+function tornadoStep(rg) {
+  if (!rg.tornados || !rg.tornados.length) return;
+  rg.ts = (rg.ts || 0) + 1;
+  if (rg.ts % 3 === 0) moveTornados(rg);
+}
+function shove(rg) {
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]].sort(() => Math.random() - 0.5)) {
+    const nx = P.x + dx, ny = P.y + dy;
+    if (nx > 0 && ny > 0 && nx < MW(rg.map) - 1 && ny < MH(rg.map) - 1 && !"#o".includes(rg.map[ny][nx]) && !(rg.boss && rg.boss.x === nx && rg.boss.y === ny)) { P.x = nx; P.y = ny; log("The rising rock throws you aside!"); return; }
+  }
+  const o = randOpen(rg); P.x = o[0]; P.y = o[1];
+}
+function initArenaFx(rg) {
+  clearArenaFx(rg);
+  if (rg.boss && rg.boss.tornado) rg.tornados = [mkTornado(rg)];
+}
+// bosses can't lose HP below 50% until they enrage; Ragnarok only takes damage from his current weakness
+function hurt(t, n) {
+  if (n <= 0) return 0;
+  if (t.vuln && P.cls !== t.vuln) { log(`${t.t.n} is unharmed! Only a ${CLASSES[t.vuln].i} ${CLASSES[t.vuln].n} can hurt him right now.`); return 0; }
+  t.hp -= n;
+  if (t.aoes && !t.enraged && t.hp < t.max / 2) t.hp = Math.floor(t.max / 2);
+  if (t.vuln) { t.vuln = pickVuln(t.vuln); log(`${t.t.n}’s weakness shifts to ${CLASSES[t.vuln].i} ${CLASSES[t.vuln].n}!`); }
+  return n;
+}
+function pushAoe(b, a, rg) {
+  sfx("warn");
+  rg.tele.push({ n: a.n, tiles: aoeTiles(a, b, rg), pct: a.pct, death: !!a.death, due: b.bt + a.delay, linger: a.linger, lpct: a.lpct, debuff: a.debuff });
+  b.cds[a.n] = a.cd;
+  log(`${b.t.n} prepares ${a.n}! ${a.death ? "Black tiles = instant death." : "Red tiles will be hit"} ${a.delay > 1 ? `in ${a.delay} boss moves.` : "on its next move."}${a.linger ? " Purple tiles will linger afterwards." : ""}`);
+}
+// Lucifugus (every 2 hits) and Ragnarok (every hit) teleport after being hit, then use an area attack
+async function afterBossHit(b) {
+  if (!b.tp) return;
+  b.hits = (b.hits || 0) + 1;
+  if (b.hits % b.tp !== 0) return;
+  const rg = R(), o = randOpen(rg);
+  b.x = o[0]; b.y = o[1];
+  log(`${b.t.n} teleports away!`); sfx("teleport");
+  const pool = b.aoes.filter(a => !a.phase || b.enraged);
+  if (pool.length) pushAoe(b, pool[Math.floor(Math.random() * pool.length)], rg);
+  render(); await sleep(300);
+}
+async function bossStrike(b, counter) {
+  if (!adj(b)) return;
+  if (counter && b.countered) return;        // a counterattack uses up the boss's turn: it can't strike twice
+  if (counter) b.countered = true;
+  log(counter ? `${b.t.n} counterattacks!` : `${b.t.n} lashes out at you!`);
+  await sleep(250);
+  const dmg = await resolveAttack(b.t.n, "You", b.atk, { ab: b.slow > 0 ? -3 : 0, db: defRoll() });
+  P.hp = Math.max(0, P.hp - dmg);
+  if (P.hp <= 0) faint();
+}
+async function bossTurn(b) {
+  const rg = R();
+  busy = true;
+  b.bt++;
+  P.sp = Math.min(P.maxSp, P.sp + spRate());
+  if (P.aegis > 0) P.aegis--;
+  if (P.curse > 0) P.curse--;
+  if (b.slow > 0) b.slow--;
+  if (b.burn > 0) { b.burn--; if (!b.vuln) hurt(b, 2); log(`${b.t.n} burns for 2 damage.`); if (b.hp <= 0) { bossWin(b); return; } }
+  if (!b.enraged && b.hp <= b.max / 2) {
+    b.enraged = true; sfx("enrage"); log(`${b.t.n} is ENRAGED! It moves faster and unleashes new attacks!`);
+    if (b.tornado) { rg.tornados.push(mkTornado(rg), mkTornado(rg)); log("Two more tornadoes tear across the arena!"); }
+  }
+  if (b.fireArena) { const dmg = Math.max(1, Math.ceil(P.max * 0.1)); P.hp = Math.max(0, P.hp - dmg); log(`The arena burns you for ${dmg} damage!`); if (P.hp <= 0) { faint(); return; } }
+  rg.linger = (rg.linger || []).filter(l => l.until >= b.bt);
+  for (const l of rg.linger) if (l.tiles.some(([x, y]) => x === P.x && y === P.y)) { lingerHit(b, l); if (dead) return; }
+  const due = rg.tele.filter(t => t.due <= b.bt);
+  rg.tele = rg.tele.filter(t => t.due > b.bt);
+  let hit = false, any = false;
+  for (const t of due) {
+    if (t.obs) {
+      for (const [x, y] of rg.obs || []) if (rg.map[y][x] === "o") rg.map[y][x] = ".";
+      rg.obs = t.tiles.filter(([x, y]) => rg.map[y][x] === "." && !(x === b.x && y === b.y));
+      const onIt = rg.obs.some(([x, y]) => x === P.x && y === P.y);
+      for (const [x, y] of rg.obs) rg.map[y][x] = "o";
+      log("Rocks erupt from the ground!");
+      if (onIt) { hitPlayer(b, t.pct, "A rising boulder"); if (dead) return; shove(rg); }
+      continue;
+    }
+    any = true;
+    if (t.tiles.some(([x, y]) => x === P.x && y === P.y)) {
+      hit = true;
+      if (t.death) { log(`${t.n}: instant death!`); P.hp = 0; faint(); return; }
+      hitPlayer(b, t.pct, t.n); if (dead) return;
+    }
+    if (t.linger) rg.linger.push({ n: t.n, tiles: t.tiles, pct: t.lpct, until: b.bt + t.linger, debuff: t.debuff });
+  }
+  if (any && !hit) log("You dodged the attack!");
+  render(); await sleep(350);
+  if (adj(b)) {
+    if (b.countered) log(`${b.t.n} already struck this turn and holds back.`);
+    else await bossStrike(b, false);
+    if (dead) return;
+  } else bossMove(b, rg);
+  b.countered = false;
+  for (const k in b.cds) if (b.cds[k] > 0) b.cds[k]--;
+  const pool = b.aoes.filter(a => !(b.cds[a.n] > 0) && (!a.phase || b.enraged));
+  const chance = (b.enraged ? 0.75 : 0.55) + ((DIFFS[P.diff] || DIFFS.normal).aoe || 0);
+  if (pool.length && Math.random() < chance) pushAoe(b, pool[Math.floor(Math.random() * pool.length)], rg);
+  if (b.earth && b.bt % 3 === 0) {
+    rg.tele.push({ n: "Earthquake", tiles: aoeTiles({ kind: "scatter", cnt: 14 }, b, rg), pct: 1.5, due: b.bt + 1, obs: true });
+    log("The ground trembles! Rocks will rise on the red tiles next turn.");
+  }
+  busy = false; render();
+}
+// every step or action you take counts toward the boss's next move (3 steps, 2 below half HP; a Rogue's double turns double that)
+function arenaTick() {
+  const rg = R(), b = rg.boss;
+  if (!b) return Promise.resolve();
+  tornadoStep(rg);
+  if (dead) return Promise.resolve();
+  b.astep++;
+  return b.astep % ((b.hp <= b.max / 2 ? 2 : 3) * cls().turn) === 0 ? bossTurn(b) : Promise.resolve();
+}
+function bossWin(b) { fight = b; winFight(); }
+async function bossAttack() {
+  const b = R().boss;
+  if (!b || busy || modalOpen) return;
+  if (dm(b) > atkRange()) { log(`The boss is out of range (your range is ${atkRange()}).`); return; }
+  busy = true; render();
+  const dealt = hurt(b, await resolveAttack("You", b.t.n, atkPower(), { ab: atkRoll() }));
+  if (b.hp <= 0) { bossWin(b); return; }
+  render();
+  await bossStrike(b, true);
+  if (dead) return;
+  if (dealt > 0) await afterBossHit(b);
+  busy = false; render();
+  await arenaTick(); render();
+}
+async function bossCast(id) {
+  const s = SKILLS[id], b = R().boss;
+  if (!b || busy || modalOpen || P.sp < s.sp) return;
+  if (!skillUsable(s)) { log(`${s.n} needs a ${WT[s.wt].n} equipped.`); return; }
+  if (b.noHeal && (s.heal || s.drain)) { log("Healing and lifesteal skills are blocked in this fight!"); return; }
+  if (s.pct && dm(b) > skRange(s)) { log(`Out of range (${s.n} reaches ${skRange(s)} tiles).`); return; }
+  busy = true; P.sp -= s.sp; render();
+  const dealt = await skillOn(s, b);
+  if (b.hp <= 0) { bossWin(b); return; }
+  if (dealt > 0) await afterBossHit(b);
+  tornadoStep(R()); if (dead) return;
+  // using a skill spends the boss's whole turn (a Rogue gets two skills per boss turn)
+  b.sk = (b.sk || 0) + 1;
+  if (b.sk % cls().turn === 0) { b.astep = 0; render(); await bossTurn(b); }
+  else { log("You act again before the boss can react!"); busy = false; render(); }
+}
+// Divine Dragon Amulet: become any class (costs a turn) and equip that class’s Calamitite weapon
+async function transform(id) {
+  if (busy || modalOpen || !P.amulet || id === P.cls) return;
+  P.cls = id;
+  const w = "cal_" + WT[CLASSES[id].wt].p;
+  if (P.gear.includes(w)) P.wep = w;
+  recalc();
+  log(`The Divine Dragon Amulet transforms you into a ${cls().n}!`);
+  if (fight) { busy = true; render(); await sleep(400); await foeTurn(); }
+  else if (R().boss) { const b = R().boss; busy = true; render(); tornadoStep(R()); b.astep = 0; await bossTurn(b); }
+  else render();
+}
+function wizardTalk() {
+  const n = Object.keys(WT).filter(w => P.cal[w]).length;
+  if (P.divineKey) log("Wizard: “You already carry the Divine Key. Defeat the four Elder Dragons and unseal Ragnarök, and free the lands of fear!”");
+  else if (n >= 5) {
+    P.divineKey = true;
+    log("Wizard: “Remarkable! You have bested Lucifugus with every class and hold every Calamitite weapon. I entrust the Divine Key to you. Defeat the four Elder Dragons and unseal the Ragnarök. If you can defeat Lucifugus so many times, you must surely be powerful enough to defeat Ragnarök and free the lands of fear.”");
+  } else log(`Wizard: “Prove your worthiness of the Key. Defeat Lucifugus once with every class and claim every Calamitite weapon.” (${n}/5 classes)`);
+}
+const altarKind = rg => (rg.secret ? "secret" : rg.shrine ? "shrine" : !rg.br && BOSSES[rg.i] ? "boss" : null);
+function summon(rg) {
+  const ak = altarKind(rg);
+  rg.boss = ak === "shrine" ? makeShrineBoss(rg) : ak === "secret" ? makeRagnarok(rg) : makeBoss(P.reg);
+  initArenaFx(rg);
+  log(ak === "boss" ? `The podium glows... ${rg.boss.t.n} returns! The gates seal again.` : `${rg.boss.title} awakens! The gate seals behind you.`);
+  if (rg.boss.noHeal && ak === "shrine") log("Rule: no healing or lifesteal skills in this fight (potions are fine).");
+}
+
+// ---------- combat ----------
+async function tumble(id, sides, final) {
+  sfx("dice");
+  const el = $(id);
+  for (let t = 0; t < 6; t++) { el.textContent = d(sides); await sleep(45); }
+  el.textContent = final;
+}
+// o.ab / o.db = bonus to attacker / defender d20. o.duel === false skips the d20 duel. o.half halves damage. o.dmg = fixed spell damage on a hit.
+async function resolveAttack(att, def, base, o = {}) {
+  const me = att === "You", you = def === "You";
+  const v = me ? "" : "s", dv = you ? "" : "s", ar = me ? "roll" : "rolls", dr = you ? "roll" : "rolls";
+  const f = (n, bo) => bo ? ` ${bo > 0 ? "+" : "-"}${Math.abs(bo)} = ${n + bo}` : "";
+  ["d1", "d2", "d3"].forEach(i => $(i).textContent = "–");
+  log(`${att} attack${v}!`);
+  await sleep(400);
+  if (o.duel !== false) {
+    const a = d(20), ab = o.ab || 0, b = d(20), db = o.db || 0;
+    await tumble("d1", 20, a + ab); log(`${att} ${ar} d20: ${a}${f(a, ab)}`);
+    await sleep(450);
+    await tumble("d2", 20, b + db); log(`${def} ${dr} d20: ${b}${f(b, db)}`);
+    await sleep(500);
+    if (a + ab <= b + db) { sfx("miss"); log(`${def} defend${dv}. The attack is canceled.`); await sleep(600); return 0; }
+    if (o.dmg !== undefined) { sfx("hit"); log(`The spell hits! ${o.dmg} guaranteed damage.`); await sleep(600); return o.dmg; }
+    log("The attack lands! Rolling damage...");
+  } else log(`${def} brace${dv} for the hit. No d20 duel!`);
+  await sleep(400);
+  const r = d(6); await tumble("d3", 6, r);
+  const floor = me && r === 1 && it_("acc").floor;
+  let dmg = Math.round(base * (floor ? 0.25 : D6_PCT[r]));
+  if (you && dmg > 0) {
+    if (P.aegis > 0) dmg = Math.round(dmg * (1 - P.aegisP));
+    if (o.half) dmg = Math.round(dmg / 2);
+    dmg = Math.max(0, dmg - defTotal());
+  }
+  if (floor) log(`d6 is 1, but your ${it_("acc").n} lifts it to 25%: ${dmg} damage.`);
+  else if (r === 1) log("d6 is 1: miss!");
+  else log(`d6 is ${r}${r === 6 ? " (CRITICAL, 125%)" : ` (${D6_PCT[r] * 100}%)`}: ${dmg} damage.`);
+  if (dmg > 0) sfx(you ? "hurt" : r === 6 ? "crit" : "hit"); else sfx("miss");
+  await sleep(600);
+  return dmg;
+}
+async function enemyTurn(guard) {
+  const dmg = await resolveAttack(fight.t.n, "You", fight.atk, guard ? { duel: false, half: true } : { ab: -fight.pen - (fight.slow > 0 ? 3 : 0), db: defRoll() });
+  P.hp = Math.max(0, P.hp - dmg);
+  if (P.hp <= 0) return faint();
+  await endRound(guard);
+  if (fight) { busy = false; render(); }
+}
+// a Rogue acts twice for every enemy turn
+async function foeTurn(guard) {
+  fight.pt = (fight.pt || 0) + 1;
+  if (fight.pt % cls().turn !== 0) { log("You act again before it can react!"); await sleep(300); busy = false; render(); return; }
+  await enemyTurn(guard);
+}
+// End of a battle turn: regen SP, tick Aegis, slow and burn.
+async function endRound(guard) {
+  P.sp = Math.min(P.maxSp, P.sp + spRate() + (guard ? 1 : 0) + (it_("acc").regen || 0));
+  if (P.aegis > 0) P.aegis--;
+  if (fight.slow > 0) fight.slow--;
+  if (fight.burn > 0) {
+    fight.burn--; fight.hp -= 2;
+    log(`${fight.t.n} burns for 2 damage.`);
+    render(); await sleep(500);
+    if (fight.hp <= 0) winFight();
+  }
+}
+// ---------- death screen ----------
+function faint() {
+  if (dead) return;
+  dead = true; fainted = true; modalOpen = true;
+  const lost = Math.floor(P.cr / 2);
+  P.cr -= lost; P.hp = 0;
+  if (fight) { fight.hp = fight.max; fight.burn = 0; fight.slow = 0; }
+  const cur = R();
+  if (cur.boss) { cur.boss = cur.shrine || cur.secret ? null : cur.br ? makeMini(cur.i, cur) : makeBoss(P.reg); clearArenaFx(cur); }
+  P.aegis = 0; fight = null; busy = false;
+  log(`You fainted and lost ${lost} credits.`); sfx("death");
+  $("deathP").textContent = `You lost ${lost} credits. Choose where to wake up.`;
+  $("deathList").innerHTML = P.fast.map(k => `<button type="button" data-k="${k}">${locName(k)}</button>`).join("");
+  $("death").classList.remove("hidden");
+  render();
+}
+function respawnAt(k) {
+  dead = false; fainted = false; modalOpen = false;
+  P.reg = +k; P.br = 0; P.hp = P.max; P.sp = P.maxSp;
+  [P.x, P.y] = R().map.shop; P.px = P.x; P.py = P.y;
+  $("death").classList.add("hidden");
+  log(`You wake up in ${NAMES[+k]}.`);
+  render();
+}
+$("deathList").onclick = e => { const b = e.target.closest("button"); if (b) respawnAt(b.dataset.k); };
+function give(id, verb = "Dropped") {
+  id = resolveId(id);
+  const it = ITEMS[id];
+  if (!it) return;
+  if (it.cat === "c") { P.inv[id]++; log(`${verb}: ${it.n}.`); return; }
+  if (P.gear.includes(id)) { const v = Math.floor(it.cost / 2); P.cr += v; log(`${verb} a spare ${it.n}; sold for ${v} credits.`); return; }
+  log(`${verb}: ${it.n}!`); addGear(id);
+}
+function grantKeyItem(id) {
+  const S = SHRINES.find(z => z.id === id);
+  if (!P.keyItems[S.key]) { P.keyItems[S.key] = true; log(`Key Item obtained: ${S.keyN}!`); }
+  if (!P.amulet && SHRINES.every(z => P.keyItems[z.key])) {
+    P.amulet = true;
+    log("The four key items fuse into the DIVINE DRAGON AMULET! You can now transform into any class at the cost of a turn (see the 🐉 buttons next to your potions).");
+  }
+}
+function showEnding() { modalOpen = true; $("ending").classList.remove("hidden"); }
+function winFight() {
+  const e = fight, xp = Math.round(e.c * 1.5), heal = Math.ceil(P.max * 0.1), rg = R(), st = tierOf(P.reg);
+  const gold = Math.round(e.c * (1 + (it_("acc").gold || 0))), spg = Math.ceil(P.maxSp * 0.5);
+  P.cr += gold; P.hp = Math.min(P.max, P.hp + heal); P.sp = Math.min(P.maxSp, P.sp + spg); P.aegis = 0;
+  sfx("win"); log(`${e.title || e.t.n} defeated! +${gold} credits, +${xp} EXP, healed ${heal} HP, +${spg} SP.`);
+  gainExp(xp);
+  const final = e.boss && !e.shrine && !e.ragnarok && rg.i === 99;
+  const bossItem = ITEMS["ba" + st] ? "ba" + st : `bw${st}_${WT[cls().wt].p}`;
+  const list = e.ragnarok || e.shrine ? [["gpot", 1], ["gspp", 1]] : e.mini ? [["gpot", .5], ["spp", .5]] : final ? [["pot", 1], [`cal_${WT[cls().wt].p}`, 1], ["calA", 1]] : e.boss ? [["pot", 1], [bossItem, 1]] : e.key ? [["gpot", .3]] : (DROPS[e.t.n] || []);
+  for (const [id, p] of list) if (Math.random() < p) give(id);
+  rg.enemies = rg.enemies.filter(x => x !== e);
+  if (e.mini) {
+    rg.boss = null; clearArenaFx(rg); rg.cleared = true; rg.chestPos = [e.x, e.y]; rg.map[e.y][e.x] = "C"; P.st.minis++;
+    log("The guardian falls and a treasure chest appears right where it stood!");
+  } else if (e.ragnarok) {
+    rg.boss = null; clearArenaFx(rg); P.st.rag = true;
+    log("Ragnarok crumbles. The Tyrant’s power fades and the lands are finally free of fear!");
+    showEnding();
+  } else if (e.shrine) {
+    rg.boss = null; clearArenaFx(rg); grantKeyItem(e.shrine);
+    log("The Elder Dragon falls. The altar can awaken it again.");
+  } else if (e.boss) {
+    rg.boss = null; clearArenaFx(rg); rg.bossDead = true; P.st.bosses[st + 1] = true;
+    if (final) { P.cal[cls().wt] = true; log(`Lucifugus: The Final Boss falls! You claimed the Calamitite ${WT[cls().wt].noun} and Calamitite Armor. The path north to ??? is open. Defeat him with every class to prove your worth to the Wizard.`); }
+    else log("The gates unseal! The 🏆 podium near the entrance can summon the boss again.");
+  }
+  else if (e.key) { P.keys[P.reg] = true; log("The Gatekeeper drops a rusty key! Find the 🔒 gate in this region."); }
+  else { rg.q.push(P.tick + 25); questProgress(e); P.st.kills++; }
+  fight = null; busy = false; render();
+}
+function gainExp(n) {
+  if (P.lv >= LV_CAP) { P.exp = 0; return; }
+  P.exp += Math.round(n * (P.xpmul || 1));   // Dev Tools: xpmul
+  while (P.lv < LV_CAP && P.exp >= expNeed()) {
+    P.exp -= expNeed(); P.lv++; P.pts += 2;
+    log(`LEVEL UP! You are now level ${P.lv}. You gained 2 points.`); sfx("levelup");
+    if (P.lv % 10 === 0) { P.baseMax += 20; P.hp += 20; log("Your body hardens: +20 max HP!"); }
+    if (P.lv % 50 === 0 && skSlots() <= 5) log(`You unlocked skill slot ${skSlots()}!`);
+  }
+  if (P.lv >= LV_CAP) { P.exp = 0; log("You have reached the maximum level!"); }
+  recalc();
+}
+// each stat can take at most 100 points (300 in total)
+function upgrade(k) {
+  if (P.pts < 1 || P.spent[k] >= SP_CAP) return;
+  P.pts--; P.spent[k]++;
+  if (k === "a") P.atkP++; else if (k === "d") P.defP += 2; else { P.baseSp++; P.sp++; }
+  recalc(); render();
+}
+async function attack() {
+  if (R().boss) return bossAttack();
+  if (!fight || busy) return;
+  busy = true; render();
+  fight.hp -= await resolveAttack("You", fight.t.n, atkPower(), { ab: atkRoll(), db: -fight.pen });
+  if (fight.hp <= 0) { winFight(); return; }
+  render();
+  await sleep(500);
+  await foeTurn();
+}
+async function defend() {
+  if (!fight || busy) return;
+  busy = true; render();
+  log("You raise your guard. Incoming damage is halved.");
+  await sleep(400);
+  await foeTurn(true);
+}
+// one skill used on a target (enemy in a duel, or a boss). Skills of 100%+ damage need a d20 duel win, weaker ones are guaranteed.
+async function skillOn(s, t) {
+  const parts = []; let dealt = 0;
+  sfx(s.heal || s.shield ? "heal" : "spell");
+  if (s.pct) {
+    let dm2 = Math.round(atkPower() * s.pct);
+    if (s.roll !== undefined) { log(`You cast ${s.n}!`); dm2 = await resolveAttack("You", t.t.n, 0, { ab: atkRoll() + s.roll, db: -(t.pen || 0), dmg: dm2 }); }
+    if (t.aoes) dm2 = hurt(t, dm2); else t.hp -= dm2;
+    dealt = dm2;
+    if (dm2 > 0) {
+      parts.push(`${dm2} damage`);
+      if (s.drain) { if (t.noHeal) parts.push("lifesteal blocked"); else { const hl = Math.max(1, Math.round(dm2 * 0.2)); P.hp = Math.min(P.max, P.hp + hl); parts.push(`healed ${hl} HP`); } }
+      if (s.burn) { t.burn = 3; parts.push("burning (2 damage for 3 turns)"); }
+      if (s.slow) { t.slow = 2; parts.push("enemy d20 -3 for 2 turns"); }
+    } else parts.push("the skill missed");
+  }
+  if (s.heal && !t.noHeal) { const h = Math.ceil(P.max * s.heal); P.hp = Math.min(P.max, P.hp + h); parts.push(`healed ${h} HP`); }
+  if (s.shield) { P.aegis = 3; P.aegisP = s.shield; parts.push(`damage taken -${s.shield * 100}% for 3 turns`); }
+  log(`You used ${s.n}! ${parts.join(", ")}.`);
+  await sleep(500);
+  return dealt;
+}
+async function cast(id) {
+  if (R().boss) return bossCast(id);
+  const s = SKILLS[id];
+  if (!fight || busy || P.sp < s.sp) return;
+  if (!skillUsable(s)) { log(`${s.n} needs a ${WT[s.wt].n} equipped.`); return; }
+  busy = true; P.sp -= s.sp; render();
+  await skillOn(s, fight);
+  render();
+  if (fight.hp <= 0) { winFight(); return; }
+  await foeTurn();
+}
+async function run() {
+  if (!fight || busy) return;
+  busy = true; render();
+  const r = d(20); await tumble("d1", 20, r);
+  log(`You roll ${r} to escape...`);
+  await sleep(700);
+  if (r >= 11) {
+    log("You got away!");
+    P.x = P.px; P.y = P.py; fight.burn = 0; fight.slow = 0; P.aegis = 0;
+    fight = null; busy = false; render();
+  } else {
+    log("Escape failed!");
+    await sleep(500);
+    await foeTurn();
+  }
+}
+async function useItem(id) {
+  const it = ITEMS[id];
+  if (busy || modalOpen || !P.inv[id]) return;
+  if (it.heal) {
+    if (P.hp >= P.max) { log("HP is already full."); return; }
+    const h = Math.ceil(P.max * it.heal); P.hp = Math.min(P.max, P.hp + h); log(`You use ${it.n} and heal ${h} HP.`);
+  } else {
+    if (P.sp >= P.maxSp) { log("SP is already full."); return; }
+    const amt = Math.ceil(P.maxSp * it.spPct); P.sp = Math.min(P.maxSp, P.sp + amt); log(`You use ${it.n} and restore ${amt} SP.`);
+  }
+  P.inv[id]--; sfx("heal");
+  if (fight) { busy = true; render(); await sleep(800); await foeTurn(); }
+  else if (R().boss) { busy = true; render(); await sleep(300); busy = false; await arenaTick(); render(); }
+  else render();
+}
+
+// ---------- save / load ----------
+const strip = r => r && (({ map, ...rest }) => rest)(r);
+async function saveGame() {
+  if (fight || busy || dead) { log("Finish the fight before saving."); return; }
+  const data = JSON.stringify({ v: 7, P, regions: regions.map(strip), branches: Object.fromEntries(Object.entries(branches).map(([k, b]) => [k, strip(b)])) });
+  let dl = null;
+  try { dl = window.claude ? await window.claude.use("downloads") : null; } catch (e) {}
+  if (!dl) { $("saveCode").value = data; $("saveCode").classList.remove("hidden"); log("File saving is unavailable here. Copy the save text below instead."); return; }
+  try { await dl.save({ filename: "dice-quest-save.json", data }); log("Game saved to file."); }
+  catch (e) { log(e && e.code === "declined" ? "Save canceled." : "Saving failed."); }
+}
+function loadGame(file) {
+  const rd = new FileReader();
+  rd.onload = () => {
+    try {
+      const s = JSON.parse(rd.result);
+      if (s.v !== 7) throw 0;
+      Object.keys(P).forEach(k => delete P[k]); Object.assign(P, freshP(), s.P);
+      regions = s.regions.map(r => r && { ...r, map: genMap(r.i) });
+      for (const r of regions) if (r && isHub(r.i) && !r.res) r.res = makeResidents(r);
+      branches = {}; for (const k in s.branches) { const b = s.branches[k]; branches[k] = { ...b, map: genBranch(b.i, b.d) }; }
+      for (const r of regions) if (r) r.obs = [];
+      for (const b of Object.values(branches)) { b.obs = []; if (b.kind === "mini" && b.cleared) { const [cx, cy] = b.chestPos || b.map.mini; b.map[cy][cx] = "C"; } }
+      fight = null; busy = false; dead = false; fainted = false; $("death").classList.add("hidden");
+      recalc(); R(); started = true; closeMenu();
+      log("Game loaded."); render();
+    } catch (e) { log("That file is not a valid Dice Quest save (older saves are not compatible)."); }
+  };
+  rd.readAsText(file);
+}
+
+// ---------- new game / menu / settings ----------
+function startNew(id, diff) {
+  Object.keys(P).forEach(k => delete P[k]); Object.assign(P, freshP());
+  P.cls = id; P.diff = diff || "normal"; regions = []; branches = {}; fight = null; busy = false; dead = false; fainted = false;
+  $("log").innerHTML = ""; $("death").classList.add("hidden");
+  const c = CLASSES[id];
+  P.wep = WT[c.wt].p + "0"; P.gear = [P.wep]; P.skills = [c.start, "aegis"]; P.owned = [c.start, "aegis"];
+  recalc(); P.hp = P.max; P.sp = P.maxSp;
+  getRegion(0); [P.x, P.y] = regions[0].map.entry; P.px = P.x; P.py = P.y; fillBoard(0);
+  started = true; closeMenu();
+  log(`Welcome, ${c.n}! Visit the 🏛️ Guild, 🏪 shop, 🏫 skill hall and 🎓 class hall, then find the ➡️ exit to start your journey.`);
+  render();
+}
+let pendingCls = "sword";
+const menuPane = id => ["menuMain", "menuSet", "menuClass", "menuDiff", "menuAudio"].forEach(p => $(p).classList.toggle("hidden", p !== id));
+function showMenu() { modalOpen = true; inMenu = true; updateMusic(); $("menu").classList.remove("hidden"); menuPane("menuMain"); $("menuResume").classList.toggle("hidden", !started); }
+function closeMenu() { inMenu = false; $("menu").classList.add("hidden"); if (!dead) modalOpen = false; }
+$("classList").innerHTML = Object.entries(CLASSES).map(([id, c]) => `<button type="button" class="card" data-c="${id}"><b>${c.i} ${c.n}</b><br><small>${c.d}<br>First skill: ${SKILLS[c.start].i} ${SKILLS[c.start].n} · Second skill: ${SKILLS.aegis.i} Simple Aegis</small></button>`).join("");
+$("classList").onclick = e => { const b = e.target.closest("button"); if (b) { pendingCls = b.dataset.c; menuPane("menuDiff"); } };
+$("diffList").innerHTML = Object.entries(DIFFS).map(([id, df]) => `<button type="button" class="card" data-d="${id}"><b>${df.n}</b><br><small>${df.d}</small></button>`).join("");
+$("diffList").onclick = e => { const b = e.target.closest("button"); if (b) startNew(pendingCls, b.dataset.d); };
+$("diffBack").onclick = () => menuPane("menuClass");
+$("endBtn").onclick = () => { $("ending").classList.add("hidden"); modalOpen = false; };
+$("menuNew").onclick = () => menuPane("menuClass");
+$("menuLoad").onclick = () => $("file").click();
+$("menuSettings").onclick = () => { $("setTheme").value = SET.theme; $("setSpeed").value = String(SET.speed); $("setTut").checked = SET.tut; $("setMus").value = SET.mus; $("setSfx").value = SET.sfx; $("setMute").checked = SET.mute; menuPane("menuSet"); };
+$("menuResume").onclick = closeMenu;
+$("setBack").onclick = () => menuPane("menuMain"); $("classBack").onclick = () => menuPane("menuMain");
+$("setTheme").onchange = () => { SET.theme = $("setTheme").value; applySettings(); };
+$("setSpeed").onchange = () => { SET.speed = Number($("setSpeed").value); applySettings(); };
+$("setTut").onchange = () => { SET.tut = $("setTut").checked; applySettings(); };
+$("toMenu").onclick = showMenu;
+
+
+// ---------- Dev Tools (password locked) ----------
+const DEV_PW = "DeathPie291";
+const DEVF = [["HP", "hp"], ["Base max HP", "baseMax"], ["ATK points", "atkP"], ["DEF points", "defP"], ["Credits", "cr"], ["SP", "sp"], ["Base max SP", "baseSp"], ["Level", "lv"], ["EXP", "exp"], ["Skill points", "pts"]];
+const devOut = t => { $("devOut").textContent = t; };
+function devFill() { $("devFields").innerHTML = DEVF.map(([l, k]) => `<label class="dv">${l}<input type="number" data-k="${k}" value="${P[k]}"></label>`).join(""); }
+function devCmd(line) {
+  const [c, ...a] = line.trim().split(/\s+/), n = Number(a[1]);
+  switch ((c || "").toLowerCase()) {
+    case "help": return "set <hp|maxhp|atk|def|cr|sp|maxsp|lv|exp|pts> <n>\ngive <itemId> [count]   skill <skillId>   class <sword|paladin|rogue|archer|mage>\ntp <stage-region, e.g. 3-5>   heal   killboss\nunlock (all Safeplaces)   clearquest   items   skills\ndamage <n> (hit the current enemy/boss)   peace / war (no enemies / enemies back)   skins (unlock all skins)\ndivine (Divine Key)   amulet (all key items + amulet)   secret (go to ???)\nxpmul <n> (multiply all EXP gained, e.g. xpmul 5; xpmul 1 resets)";
+    case "set": {
+      const k = { hp: "hp", maxhp: "baseMax", atk: "atkP", def: "defP", cr: "cr", sp: "sp", maxsp: "baseSp", lv: "lv", exp: "exp", pts: "pts" }[(a[0] || "").toLowerCase()];
+      if (!k || isNaN(n)) return "Usage: set <field> <number>";
+      P[k] = Math.round(n); recalc(); render(); return `${k} = ${P[k]}`;
+    }
+    case "give": {
+      const id = a[0], cnt = Math.max(1, parseInt(a[1]) || 1);
+      if (!ITEMS[id]) return "Unknown item. Try: items";
+      for (let k = 0; k < cnt; k++) { if (ITEMS[id].cat === "c") P.inv[id]++; else if (!P.gear.includes(id)) addGear(id); }
+      render(); return `Gave ${ITEMS[id].n}.`;
+    }
+    case "skill": { const id = a[0]; if (!SKILLS[id]) return "Unknown skill. Try: skills"; if (!P.owned.includes(id)) P.owned.push(id); render(); return `Learned ${SKILLS[id].n}.`; }
+    case "tp": {
+      const m = /^(\d+)-(\d+)$/.exec(a[0] || ""), i = m ? (+m[1] - 1) * 10 + (+m[2] - 1) : -1;
+      if (i < 0 || i >= N || +m[2] > 10 || +m[2] < 1) return "Usage: tp <stage>-<region>, e.g. tp 2-5";
+      fight = null; busy = false; P.reg = i; P.br = 0; const rg = R();
+      [P.x, P.y] = isHub(i) ? rg.map.shop : rg.map.entry; P.px = P.x; P.py = P.y; render(); return `Teleported to ${locName(i)}.`;
+    }
+    case "class": { const id = (a[0] || "").toLowerCase(); if (!CLASSES[id]) return "Classes: " + Object.keys(CLASSES).join(", "); P.cls = id; grantStarter(id); recalc(); render(); return `Class set to ${cls().n}.`; }
+    case "damage": {
+      const n2 = Math.round(Number(a[0]));
+      if (isNaN(n2)) return "Usage: damage <number>";
+      const t = fight || R().boss;
+      if (!t) return "You are not in combat.";
+      t.hp -= n2;
+      if (t.aoes && !t.enraged && t.hp < t.max / 2 && n2 > 0 && t.hp > 0) t.hp = Math.floor(t.max / 2);
+      render();
+      if (t.hp <= 0) { busy = false; if (t.aoes) bossWin(t); else winFight(); return `Dealt ${n2} damage. It falls!`; }
+      return `Dealt ${n2} damage (${t.hp}/${t.max} left).`;
+    }
+    case "peace": {
+      P.peace = true;
+      for (const r of regions) if (r) r.enemies = r.enemies.filter(e => e.key);
+      for (const b of Object.values(branches)) if (b.kind === "path") b.enemies = [];
+      if (fight && !fight.boss && !fight.mini && !fight.key) { fight = null; busy = false; }
+      render(); return "Peace mode on: enemies removed and spawning disabled.";
+    }
+    case "war": {
+      P.peace = false;
+      regions.forEach((r, i) => { if (r) for (let k = 0; k < 8 && r.enemies.filter(e => !e.key).length < capOf(i); k++) spawn(i); });
+      for (const b of Object.values(branches)) if (b.kind === "path") for (let k = 0; k < 8 && b.enemies.length < 3; k++) spawnPath(b);
+      render(); return "Peace mode off: enemies are back.";
+    }
+    case "xpmul": {
+      const v = Number(a[0]);
+      if (!(v > 0)) return `EXP multiplier is x${P.xpmul || 1}. Usage: xpmul <number above 0>`;
+      P.xpmul = v; return `All EXP gained is now multiplied by ${v}.`;
+    }
+    case "skins": { for (const x of ACH) P.ach[x.id] = true; render(); return "All skins unlocked (visit the 🧵 Tailor)."; }
+    case "divine": P.divineKey = true; render(); return "You now hold the Divine Key.";
+    case "amulet": { for (const z of SHRINES) P.keyItems[z.key] = true; P.amulet = true; for (const w in WT) { const id = "cal_" + WT[w].p; if (!P.gear.includes(id)) P.gear.push(id); P.cal[w] = true; } render(); return "All key items collected: Divine Dragon Amulet forged."; }
+    case "secret": { fight = null; busy = false; P.reg = SECRET; P.br = 0; [P.x, P.y] = R().map.entry; render(); return "Teleported to ???."; }
+    case "heal": P.hp = P.max; P.sp = P.maxSp; render(); return "Fully healed.";
+    case "killboss": { const b = R().boss; if (!b) return "No boss fight here."; b.hp = 0; busy = false; bossWin(b); return "Boss slain."; }
+    case "unlock": P.fast = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(t => String(t * 10)); return "All Safeplaces unlocked for fast travel.";
+    case "clearquest": P.quest = null; render(); return "Quest cleared.";
+    case "items": return Object.keys(ITEMS).join(", ");
+    case "skills": return Object.keys(SKILLS).join(", ");
+    default: return "Unknown command. Type help.";
+  }
+}
+$("devGo").onclick = () => {
+  if ($("devPw").value === DEV_PW) { $("devLock").classList.add("hidden"); $("devPanel").classList.remove("hidden"); devFill(); devOut("Dev Tools unlocked. Type help for commands."); }
+  else $("devMsg").textContent = "Wrong password.";
+};
+$("devApply").onclick = () => {
+  document.querySelectorAll("#devFields input").forEach(el => { const v = Number(el.value); if (!isNaN(v)) P[el.dataset.k] = Math.round(v); });
+  recalc(); render(); devFill(); devOut("Values applied.");
+};
+$("devRun").onclick = () => { devOut(devCmd($("devCmd").value)); $("devCmd").value = ""; };
+
+
+// ---------- audio: your own .mp3 / .wav / .ogg files, kept privately in this browser ----------
+const AUDIO_MUSIC = [["menu", "Title menu"], ["town", "Safeplaces"], ["road", "Roads (used for every stage unless a stage slot is set)"], ["boss", "Boss and mini boss fights"], ["final", "Lucifugus, the Final Boss"], ["secret", "Shrines and Ragnarok"]];
+const AUDIO_STAGES = Array.from({ length: 10 }, (_, k) => ["road" + (k + 1), `Stage ${k + 1} roads (optional)`]);
+const AUDIO_SFX = [["dice", "Dice rolling"], ["hit", "You land a hit"], ["crit", "Critical hit"], ["hurt", "You get hurt"], ["miss", "Miss / attack blocked"], ["spell", "Skill cast"], ["heal", "Heal, potion or buff"], ["levelup", "Level up"], ["step", "Footstep (plays every step; keep it short)"], ["chest", "Chest opened"], ["buy", "Buy / sell / learn"], ["click", "Any button click"], ["death", "You fall"], ["warn", "Boss prepares an attack"], ["enrage", "Boss enrages"], ["teleport", "Boss teleports"], ["win", "Enemy defeated"], ["achieve", "Achievement unlocked"]];
+const AUD = { url: {}, name: {}, buf: {}, folder: {}, ctx: null, musicEl: null, track: "", unlocked: false, pv: null };
+let inMenu = true, pickSlot = null;
+const isMusic = id => AUDIO_MUSIC.some(m => m[0] === id) || id.startsWith("road");
+const actx = () => { if (!AUD.ctx) { try { AUD.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } return AUD.ctx; };
+const idb = () => new Promise((res, rej) => { try { const r = indexedDB.open("dq-audio", 1); r.onupgradeneeded = () => r.result.createObjectStore("files"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); } catch (e) { rej(e); } });
+const idbPut = async (k, v) => { const db = await idb(); return new Promise((res, rej) => { const tx = db.transaction("files", "readwrite"); tx.objectStore("files").put(v, k); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); };
+const idbDel = async k => { const db = await idb(); return new Promise((res, rej) => { const tx = db.transaction("files", "readwrite"); tx.objectStore("files").delete(k); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); };
+const idbAll = async () => { const db = await idb(); return new Promise((res, rej) => { const out = {}, c = db.transaction("files").objectStore("files").openCursor(); c.onsuccess = () => { const cur = c.result; if (cur) { out[cur.key] = cur.value; cur.continue(); } else res(out); }; c.onerror = () => rej(c.error); }); };
+async function useSlot(id, rec) {
+  if (AUD.url[id]) URL.revokeObjectURL(AUD.url[id]);
+  AUD.url[id] = URL.createObjectURL(rec.blob); AUD.name[id] = rec.name; delete AUD.buf[id]; delete AUD.folder[id]; AUD.track = "";
+  if (!isMusic(id)) { const c = actx(); if (c) { try { AUD.buf[id] = await c.decodeAudioData(await rec.blob.arrayBuffer()); } catch (e) {} } }
+}
+function unlockAudio() {
+  if (AUD.unlocked) return;
+  AUD.unlocked = true;
+  const c = actx(); if (c && c.state === "suspended") c.resume();
+  updateMusic();
+}
+function sfx(id) {
+  if (SET.mute || !AUD.unlocked) return;
+  const c = AUD.ctx, b = AUD.buf[id];
+  if (c && b) { try { const s = c.createBufferSource(), g = c.createGain(); s.buffer = b; g.gain.value = SET.sfx; s.connect(g); g.connect(c.destination); s.start(); } catch (e) {} }
+  else if (AUD.url[id] && typeof Audio !== "undefined") { const a = new Audio(AUD.url[id]); a.volume = SET.sfx; a.play().catch(() => {}); }
+}
+function wantMusic() {
+  if (inMenu) return ["menu"];
+  const rg = R();
+  if (rg.boss) return [rg.boss.ragnarok || rg.shrine ? "secret" : rg.boss.mini ? "boss" : rg.i === 99 && !rg.br ? "final" : "boss", "boss"];
+  if (rg.secret || rg.shrine) return ["secret"];
+  if (!rg.br && isHub(rg.i)) return ["town", "road"];
+  return ["road" + (tierOf(rg.i) + 1), "road"];
+}
+function updateMusic() {
+  if (!AUD.unlocked || typeof Audio === "undefined") return;
+  const t = wantMusic().find(k => AUD.url[k]) || "";
+  if (!AUD.musicEl) { AUD.musicEl = new Audio(); AUD.musicEl.loop = true; }
+  const el = AUD.musicEl;
+  el.volume = SET.mute ? 0 : SET.mus;
+  if (t === AUD.track) { if (t && el.paused) el.play().catch(() => {}); return; }
+  AUD.track = t;
+  if (!t) { el.pause(); return; }
+  el.src = AUD.url[t]; el.currentTime = 0; el.play().catch(() => {});
+}
+function applyVolume() { if (AUD.musicEl) AUD.musicEl.volume = SET.mute ? 0 : SET.mus; }
+function previewSlot(id) {
+  unlockAudio();
+  if (!AUD.url[id]) return;
+  if (isMusic(id)) {
+    if (AUD.pv) AUD.pv.pause();
+    AUD.pv = new Audio(AUD.url[id]); AUD.pv.volume = SET.mute ? 0 : SET.mus; AUD.pv.play().catch(() => {});
+    setTimeout(() => { if (AUD.pv) AUD.pv.pause(); }, 8000);
+  } else sfx(id);
+}
+function renderAudioList() {
+  const row2 = ([id, label]) => `<div class="it"><div><b>${label}</b><br><small>${AUD.name[id] || `Silent. Or put ${audioDir()}${id}.mp3 in the folder`}</small></div><div class="row"><button type="button" data-a="pick:${id}">Choose</button><button type="button" data-a="play:${id}"${AUD.url[id] ? "" : " disabled"}>▶</button><button type="button" data-a="clr:${id}"${AUD.url[id] ? "" : " disabled"}>✕</button></div></div>`;
+  $("audioList").innerHTML = `<div class="it"><b>🎵 Music (loops)</b></div>${AUDIO_MUSIC.map(row2).join("")}<div class="it"><b>🎵 Per-stage road music</b></div>${AUDIO_STAGES.map(row2).join("")}<div class="it"><b>🔊 Sound effects</b></div>${AUDIO_SFX.map(row2).join("")}`;
+}
+$("audioList").onclick = async e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  const [a, id] = b.dataset.a.split(":");
+  if (a === "pick") { pickSlot = id; $("audioFile").click(); }
+  if (a === "play") previewSlot(id);
+  if (a === "clr") {
+    try { await idbDel(id); } catch (err) {}
+    if (AUD.url[id]) URL.revokeObjectURL(AUD.url[id]);
+    delete AUD.url[id]; delete AUD.name[id]; delete AUD.buf[id]; delete AUD.folder[id]; AUD.track = "";
+    probeSlot(id).then(() => { renderAudioList(); updateMusic(); });
+    renderAudioList(); updateMusic();
+  }
+};
+$("audioFile").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = "";
+  if (!f || !pickSlot) return;
+  const rec = { blob: f, name: f.name };
+  try { await idbPut(pickSlot, rec); } catch (err) { log("This browser wouldn’t store the file, so it will only last until you close the page."); }
+  await useSlot(pickSlot, rec);
+  renderAudioList(); previewSlot(pickSlot);
+};
+$("setAudio").onclick = () => { $("audioDir").value = audioDir(); renderAudioList(); menuPane("menuAudio"); };
+$("audioBack").onclick = () => menuPane("menuSet");
+$("setMus").oninput = () => { SET.mus = Number($("setMus").value); applySettings(); };
+$("setSfx").oninput = () => { SET.sfx = Number($("setSfx").value); applySettings(); };
+$("setMute").onchange = () => { SET.mute = $("setMute").checked; applySettings(); updateMusic(); };
+document.addEventListener("click", unlockAudio);
+document.addEventListener("keydown", unlockAudio);
+document.addEventListener("click", e => { if (e.target && e.target.closest && e.target.closest("button")) sfx("click"); });
+// ---- folder loading: any file named <slot>.mp3 / .wav / .ogg inside the audio folder is used automatically.
+// A file you picked in the browser always wins; missing files are skipped silently. ----
+const EXTS = ["mp3", "wav", "ogg"];
+const audioDir = () => { let d0 = (SET.dir || "audio/").trim(); if (d0 && !d0.endsWith("/")) d0 += "/"; return d0; };
+const ALL_SLOTS = () => [...AUDIO_MUSIC, ...AUDIO_STAGES, ...AUDIO_SFX].map(x => x[0]);
+function probeSlot(id) {
+  return new Promise(res => {
+    if (typeof Audio === "undefined" || (AUD.url[id] && !AUD.folder[id])) return res();
+    let i = 0, done = false;
+    const fin = () => { if (!done) { done = true; res(); } };
+    const next = () => {
+      if (i >= EXTS.length) { if (AUD.folder[id]) { delete AUD.url[id]; delete AUD.name[id]; delete AUD.folder[id]; AUD.track = ""; } return fin(); }
+      const ext = EXTS[i++], src = audioDir() + id + "." + ext, el = new Audio();
+      el.preload = "auto";
+      el.addEventListener("canplay", () => { if (!AUD.url[id] || AUD.folder[id]) { AUD.url[id] = src; AUD.name[id] = `${id}.${ext} (from folder)`; AUD.folder[id] = true; AUD.track = ""; } fin(); }, { once: true });
+      el.addEventListener("error", next, { once: true });
+      el.src = src;
+    };
+    setTimeout(fin, 6000);
+    next();
+  });
+}
+async function scanFolder() {
+  await Promise.all(ALL_SLOTS().map(probeSlot));
+  renderAudioList(); updateMusic();
+}
+$("audioDir").onchange = () => { SET.dir = $("audioDir").value; applySettings(); scanFolder(); };
+$("audioScan").onclick = scanFolder;
+idbAll().then(async all => { for (const id in all) await useSlot(id, all[id]); }).catch(() => {}).then(scanFolder);
+
+// ---------- input ----------
+document.querySelectorAll("#pad button").forEach(b => b.addEventListener("click", () => {
+  const [dx, dy] = b.dataset.d.split(",").map(Number); move(dx, dy);
+}));
+$("atk").onclick = attack; $("run").onclick = run; $("def").onclick = defend;
+$("cons").onclick = e => { const b = e.target.closest("button"); if (!b) return; if (b.dataset.x) transform(b.dataset.x); else useItem(b.dataset.u); };
+$("skills").onclick = e => { const b = e.target.closest("button"); if (b) cast(b.dataset.s); };
+$("upA").onclick = () => upgrade("a"); $("upD").onclick = () => upgrade("d"); $("upS").onclick = () => upgrade("s");
+$("save").onclick = saveGame;
+$("load").onclick = () => $("file").click();
+$("file").onchange = e => { const f = e.target.files[0]; if (f) loadGame(f); e.target.value = ""; };
+// game keys are ignored while typing in any field or while Dev Tools are open
+document.addEventListener("keydown", e => {
+  if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+  if ($("dev").open) return;
+  const k = { ArrowUp: [0, -1], w: [0, -1], ArrowDown: [0, 1], s: [0, 1], ArrowLeft: [-1, 0], a: [-1, 0], ArrowRight: [1, 0], d: [1, 0] }[e.key];
+  if (k) { e.preventDefault(); move(k[0], k[1]); }
+});
+
+applySettings();
+startNew("sword");
+started = false;
+showMenu();
+</script>
+</body>
+</html>
